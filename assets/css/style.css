@@ -1,4 +1,35 @@
+/* --------------------------------------------- LFPS Fonts */
+/* LFPS Bold */
+@font-face {
+    font-family: LFPSBold;
+    src: url('../fonts/LFPSStandard-Bold.ttf') format('truetype');
+}
+
+/* LFPS Standard */
+@font-face {
+    font-family: LFPSStandard;
+    src: url('../fonts/LFPSStandard-Regular.ttf') format('truetype');
+}
+
+
+/* --------------------------------------------- General Styling Setup */
 body {
-    background-color: blue;
-    color: white;
+    font-family: 'LFPSStandard', sans-serif;
+    background-color: black;
+    color: #20C4F4;
+}
+
+body > .container-fluid > .row {
+    height: 100vh;
+}
+
+/* --------------------------------------------- Containers */
+
+.outer-traffic-light {
+    height: 90%;
+    width: 90%;
+    border-radius: 50px;
+    background-color: white;
+    box-sizing: border-box;
+    margin: 50px;
 }
