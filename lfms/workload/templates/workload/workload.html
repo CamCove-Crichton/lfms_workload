@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_meta %}
+    <meta
+    name="description"
+    content="A workload display represented in the form of a traffic light system">
+
+    <meta
+    name="keywords"
+    content="workload, traffic light, management, api, workload capacity">
+
+    <meta name="author" content="Cameron Cove-Crichton">
+{% endblock %}
+
+{% block extra_title%}- Workload{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 order-sm-last d-flex justify-content-center align-items-center">
+                <div class="outer-traffic-light d-flex justify-content-center align-items-center">
+                    <div class="inner-traffic-light">
+                        <div class="traffic-light-colour"></div>
+                        <div class="traffic-light-colour"></div>
+                        <div class="traffic-light-colour"></div>
+                    </div>
+                    <!-- <h2>Hello World</h2> -->
+                </div>
+                <!-- Traffic Light Div -->
+            </div>
+            <div class="col-12 col-sm-6 col-lg-8 col-xl-9">
+                <div class="row">
+                    <div class="col-12">
+                        <h2>Calendar</h2>
+                        <div>
+                            <!-- Calendar details go here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <h2>Event Weights</h2>
+                        <!-- Event weight details go here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
