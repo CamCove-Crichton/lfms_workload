@@ -62,11 +62,24 @@
 </head>
 <body>
     <header class="container-fluid fixed-top">
-        <div class="row d-flex">
-            <div class="col-12 col-lg-4 my-auto py-1 py-lg-0 text-center text-lg-left">
+        <div class="row d-flex mt-3">
+            <div class="col-12 col-lg-4 my-auto py-1 py-lg-0 text-center">
                 <a href="{% url 'home' %}" class="nav-link">
                     <img src="{% static 'logos/Logo_Web.svg' %}" alt="Light Fantastic company logo">
                 </a>
+            </div>
+            <nav class="navbar navbar-dark col-12 col-lg-8">
+                <div class="container-fluid d-flex">
+                  <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                  </button>
+                </div>
+            </nav>
+            <div class="collapse text-end mt-3" id="navbarToggleExternalContent" data-bs-theme="dark">
+                <div class="bg-dark p-4">
+                  <h5 class="text-body-emphasis h4">Collapsed content</h5>
+                  <span class="text-body-secondary">Toggleable via the navbar brand.</span>
+                </div>
             </div>
         </div>
     </header>
