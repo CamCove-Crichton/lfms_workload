@@ -61,6 +61,15 @@
     <title>LFMS {% block extra_title%}{% endblock %}</title>
 </head>
 <body>
+    <header class="container-fluid fixed-top">
+        <div class="row d-flex">
+            <div class="col-12 col-lg-4 my-auto py-1 py-lg-0 text-center text-lg-left">
+                <a href="{% url 'home' %}" class="nav-link">
+                    <img src="{% static 'logos/Logo_Web.svg' %}" alt="Light Fantastic company logo">
+                </a>
+            </div>
+        </div>
+    </header>
     {% block content %}
     {% endblock %}
 </body>
