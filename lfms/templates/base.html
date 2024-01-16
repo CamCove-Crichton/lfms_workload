@@ -77,12 +77,17 @@
             </nav>
             <div class="collapse text-end mt-3" id="navbarToggleExternalContent" data-bs-theme="dark">
                 <div class="bg-dark p-4">
-                  <h5 class="text-body-emphasis h4">Collapsed content</h5>
-                  <span class="text-body-secondary">Toggleable via the navbar brand.</span>
+                  <a class="text-deco-none" href="{% url 'workload' %}">
+                    <h6 class="text-uppercase">Workload</h6>
+                  </a>
                 </div>
             </div>
         </div>
     </header>
+    
+    {% block page_header %}
+    {% endblock %}
+
     {% block content %}
     {% endblock %}
 </body>

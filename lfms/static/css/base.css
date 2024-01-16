@@ -19,11 +19,18 @@ body {
     color: #20C4F4;
 }
 
-/* body > .container-fluid > .row {
-    height: 100vh;
-} */
+.text-deco-none {
+    text-decoration: none;
+}
 
 /* --------------------------------------------- Containers */
+.header-container {
+    padding-top: 184px;
+}
+
+.workload-container {
+    height: 100vh;
+}
 
 .outer-traffic-light {
     height: 90%;
