@@ -41,6 +41,8 @@ The idea behind the LFMS Workload is to extract data from the rental management 
 - The created a base template for all other templates to extend from
 - Added in a home app for the index file and anything quite generic that would fall into the home app realm
 - Created the workload app for the main purpose of this project for the time being, where the views and templates will live for the workload functionality of the project
+- Added in a view, url and template for the workload app
+- Installed django-allauth and copied all the allauth templates into an accounts directory in the project level templates directory and made migrations as well as adjusted the setting file for the allauth package and added some config settings
 
 ---
 
@@ -60,6 +62,7 @@ The idea behind the LFMS Workload is to extract data from the rental management 
 
 - Django 5.0
 - Bootstrap 5.3
+- Django Allauth
 
 ---
 
