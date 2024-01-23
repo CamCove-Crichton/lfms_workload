@@ -23,6 +23,11 @@ body {
     text-decoration: none;
 }
 
+#main-content {
+    min-height: auto;
+    overflow: hidden;
+}
+
 /* --------------------------------------------- Containers */
 .header-container {
     padding-top: 184px;
@@ -63,4 +68,31 @@ body {
 /* --------------------------------------------- Animation & Effects */
 #main-content {
     transition: margin-top 0.3s ease-in-out;
+}
+
+/* --------------------------------------------- Media Queries */
+/* Small screens */
+@media (min-width: 448px) {
+    .header-container {
+        padding-top: 274px;
+    }
+}
+
+/* Medium screens */
+@media (min-width:768px) {
+    /* #main-content {
+        height: calc(100vh - 184px);
+        overflow: auto;
+    } */
+
+    .header-container {
+        padding-top: 328px;
+    }
+}
+
+/* Large screens */
+@media (min-width:1024px) {
+    .header-container {
+        padding-top: 156px;
+    }
 }
