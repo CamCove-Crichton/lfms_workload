@@ -71,7 +71,14 @@
             <!-- Navigation -->
             <nav class="navbar navbar-dark col-12 col-lg-8">
                 <div class="container-fluid d-flex">
-                  <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
+                  <button
+                  class="navbar-toggler ms-auto"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#navbarToggleExternalContent"
+                  aria-controls="navbarToggleExternalContent"
+                  aria-expanded="false"
+                  aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                   </button>
                 </div>
@@ -100,7 +107,31 @@
     {% block page_header %}
     {% endblock %}
 
-    {% block content %}
+    <div id="main-content">
+      {% block content %}
+      {% endblock %}
+    </div>
+
+     <!-- jQuery script -->
+     <script
+     src="https://code.jquery.com/jquery-3.7.1.js"
+     integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+     crossorigin="anonymous"></script>
+
+     <script>
+      $(document).ready(function() {
+        $('.navbar-toggler').click(function() {
+          let navHeight = $('.navbar').height();
+          if ($('#main-content').css('margin-top') === '0px') {
+            $('#main-content').css('margin-top', navHeight + 'px');
+          } else {
+            $('#main-content').css('margin-top', '0px');
+          }
+        });
+      });
+    </script>
+
+    {% block postloadjs %}
     {% endblock %}
 </body>
 </html>
