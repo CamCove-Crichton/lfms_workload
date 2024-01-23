@@ -13,6 +13,10 @@
     <meta name="author" content="Cameron Cove-Crichton">
 {% endblock %}
 
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'workload/css/workload.css' %}">
+{% endblock %}
+
 {% block extra_title%}- Workload{% endblock %}
 
 {% block page_header %}
@@ -28,16 +32,25 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row workload-container">
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 order-sm-last d-flex justify-content-center align-items-center">
+            <!-- Traffic Light Div -->
+            <!-- <div class="col-12 col-sm-6 col-lg-4 col-xl-3 order-sm-last d-flex justify-content-center align-items-center">
                 <div class="outer-traffic-light d-flex justify-content-center align-items-center">
                     <div class="inner-traffic-light">
                         <div class="traffic-light-colour"></div>
                         <div class="traffic-light-colour"></div>
                         <div class="traffic-light-colour"></div>
                     </div>
-                    <!-- <h2>Hello World</h2> -->
                 </div>
-                <!-- Traffic Light Div -->
+            </div> -->
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 order-sm-last d-flex justify-content-center align-items-center">
+                <div class="trafficlight d-flex justify-content-center align-items-center">
+                    <div class="protector"></div>
+                    <div class="protector"></div>
+                    <div class="protector"></div>
+                    <div class="red"></div>
+                    <div class="yellow"></div>
+                    <div class="green"></div>
+                </div>
             </div>
             <div class="col-12 col-sm-6 col-lg-8 col-xl-9">
                 <div class="row">
