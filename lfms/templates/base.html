@@ -68,6 +68,7 @@
                     <img src="{% static 'logos/Logo_Web.svg' %}" alt="Light Fantastic company logo">
                 </a>
             </div>
+            <!-- Navigation -->
             <nav class="navbar navbar-dark col-12 col-lg-8">
                 <div class="container-fluid d-flex">
                   <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,10 +78,21 @@
             </nav>
             <div class="collapse text-end mt-3" id="navbarToggleExternalContent" data-bs-theme="dark">
                 <div class="bg-dark p-4">
+                  {% if user.is_authenticated %}
                   <a class="text-deco-none" href="{% url 'workload' %}">
                     <h6 class="text-uppercase">Workload</h6>
                   </a>
-                </div>
+                  <a class="text-deco-none" href="{% url 'account_logout' %}">
+                    <h6 class="text-uppercase">Logout</h6>
+                  </a>
+                  {% else %}
+                  <a class="text-deco-none" href="{% url 'account_signup' %}">
+                    <h6 class="text-uppercase">Sign Up</h6>
+                  </a>
+                  <a class="text-deco-none" href="{% url 'account_login' %}">
+                    <h6 class="text-uppercase">Login</h6>
+                  </a>
+                  {% endif %}
             </div>
         </div>
     </header>
