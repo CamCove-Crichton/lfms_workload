@@ -9,7 +9,7 @@
     border: solid 5px #333;
   }
   
-  .trafficlight:before{
+  /* .trafficlight:before{
     background: #222;
     background-image: radial-gradient(#444, #000);
     content: "";
@@ -21,9 +21,9 @@
     margin-left: 0px;
     border-radius: 50%;
     z-index: -1;
-  }
+  } */
   
-  .trafficlight:after{
+  /* .trafficlight:after{
     background: #222;
     background-image: linear-gradient(-0deg, #777 10%, #ccc 30%, #000);
     content: "";
@@ -33,9 +33,9 @@
     position: absolute;
     top: 150px;
     z-index: -1;
-  }
+  } */
   
-  .protector{
+  /* .protector{
     background: transparent;
     width: 180px;
     height: 0;
@@ -47,15 +47,15 @@
     border-top: solid 90px #111;
     border-radius: 10px;
     z-index: -1;
-  }
+  } */
   
-  .protector:nth-child(2){
+  /* .protector:nth-child(2){
     top: 140px;
-  }
+  } */
   
-  .protector:nth-child(3){
+  /* .protector:nth-child(3){
     top: 260px;
-  }
+  } */
   
   .red{
     background: red;
