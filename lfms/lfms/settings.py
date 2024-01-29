@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from pathlib import Path
 from lfms.env import SECRET_KEY, DEBUG
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -98,6 +99,10 @@ LOGIN_REDIRECT_URL = '/'
 
 WSGI_APPLICATION = "lfms.wsgi.application"
 
+# API Configuration
+API_URL = config('API_URL', default='https://example.com/api/v1/your_endpoint/')
+X_SUBDOMAIN = config('X_SUBDOMAIN', default='your_subdomain')
+X_AUTH_TOKEN = config('X_AUTH_TOKEN', default='your_auth_token')
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases

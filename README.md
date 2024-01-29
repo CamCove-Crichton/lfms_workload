@@ -13,15 +13,44 @@ The idea behind the LFMS Workload is to extract data from the rental management 
 
 ---
 
+## Configuration
+
+### Environment Variables
+
+Before running the application, you need to setup the following environment variables:
+
+- 'API_URL': The URL of the API endpoint
+- 'X_SUBDOMAIN': The subdomain for the authentication
+- 'X_AUTH_TOKEN': The authentication token for accessing the API
+
+You can use the following placeholders as defaults:
+
+```bash
+export API_URL=https://example.com/api/v1/your_endpoint/
+export X_SUBDOMAIN=your_subdomain
+export X_AUTH_TOKEN=your_auth_token
+
+---
+
 ## Deployment
 
 *deployment steps go here*
 
 ---
 
-## Forking & Cloning
+## Forking, Cloning & Running the Application
 
-*forking & cloning insturctions go here*
+- From this repository click the 'Fork' button to fork a copy of the repo to your repositories
+- Use `git clone https://github.com/yourusername/yourproject.git` in your machine's terminal
+- Use `cd yourproject` to change to your projects directory on your machine within your machine's terminal
+- In your terminal setup a virtual environment using `python -m venv venv` and activate using `source venv/bin/activate`
+- Install the dependencies using `pip install -r requirements.txt`
+- Apply migrations using `python manage.py migrate`
+- Run the development server using `python manage.py runserver`
+
+You can now access the application at http://locahost:8000
+
+**Remember to replace the placeholder values with your actual configuration when deploying the application in a production environment**
 
 ---
 
