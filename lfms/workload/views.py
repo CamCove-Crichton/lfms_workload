@@ -22,6 +22,20 @@ def workload(request):
     response = requests.request("GET", url, headers=headers, data=payload)
 
     print(response.text)
+
+    if response.status_code == 200:
+        data = response.json()
+
+        order_opportunities = {}
+
+        for opportunity in data['opportunities']:
+            if opportunity.get('state_name') == 'Order':
+                order_opportunities[opportunity['id']] = opportunity
+            
+        # print(order_opportunities)
+    else:
+        print(f'Error: {response.status_code}')
+
     
     template = 'workload/workload.html'
     # context = {}

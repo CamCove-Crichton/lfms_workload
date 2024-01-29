@@ -26,9 +26,12 @@ Before running the application, you need to setup the following environment vari
 You can use the following placeholders as defaults:
 
 ```bash
-export API_URL=https://example.com/api/v1/your_endpoint/
-export X_SUBDOMAIN=your_subdomain
-export X_AUTH_TOKEN=your_auth_token
+{
+    export API_URL=https://example.com/api/v1/your_endpoint/
+    export X_SUBDOMAIN=your_subdomain
+    export X_AUTH_TOKEN=your_auth_token
+}
+```
 
 ---
 
