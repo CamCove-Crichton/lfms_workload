@@ -43,6 +43,8 @@ The idea behind the LFMS Workload is to extract data from the rental management 
 - Created the workload app for the main purpose of this project for the time being, where the views and templates will live for the workload functionality of the project
 - Added in a view, url and template for the workload app
 - Installed django-allauth and copied all the allauth templates into an accounts directory in the project level templates directory and made migrations as well as adjusted the setting file for the allauth package and added some config settings
+- Updated the django-allauth templates for a more custom display in line with the sites styling
+- Then updated the styling a bit more on the traffic light display, and will come back to it once receiving data with the use of the Current RMS api
 
 ---
 
