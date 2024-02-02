@@ -24,7 +24,6 @@ def date_check(opportunities, within_date):
     - within_date: list to append the opportunities that are within the date range
     """
     today = datetime.now(timezone.utc)
-    print(today)
     two_weeks_later = today + timedelta(days=14)
 
     for opportunity in opportunities:
@@ -47,3 +46,32 @@ def date_check(opportunities, within_date):
             print(f"TypeError: {e} - 'starts_at' is None in the opportunity {opportunity.get('number', 'unknown')}")
     
     return within_date
+
+
+def weight_calc(opportunities_within_date):
+    """
+    Calculate the total weight of the opportunities within the date range.
+
+    Parameters:
+    - opportunities_within_date: The opportunities within the date range
+
+    Returns:
+    - The total weight of the opportunities within the date range
+    """
+    weights = []
+
+    for opportunity in opportunities_within_date:
+        weight_total_str = opportunity['weight_total']
+        
+        try:
+            #Try convert the string to a float
+            weight_total = float(weight_total_str)
+            weight_total_rounded = round_to_decimal(weight_total, 2)
+            weights.append(weight_total_rounded)
+        except ValueError:
+            #Handle the case where the string is not a float
+            print(f'Warning: Could not convert {weight_total_str} to a float')
+    
+    total_weight = sum(weights)
+
+    return total_weight
