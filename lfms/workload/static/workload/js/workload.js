@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded and parsed');
     getTotalWeight();
+    setTrafficLightColour(getTotalWeight());
 });
 
 /**
@@ -26,5 +27,15 @@ function getTotalWeight() {
 }
 
 function setTrafficLightColour(weight) {
-    
+    let red = document.getElementById('red');
+    let yellow = document.getElementById('yellow');
+    let green = document.getElementById('green');
+
+    if (weight > 40000) {
+        red.classList.add('red');
+    } else if (weight > 30000) {
+        yellow.classList.add('yellow');
+    } else {
+        green.classList.add('green');
+    }
 }
