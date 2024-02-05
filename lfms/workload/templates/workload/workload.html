@@ -65,9 +65,9 @@
                     <div class="col-12">
                         <h2>Event Weights</h2>
                         <!-- Event weight details go here -->
-                        <p>Provisional Opportunities: <span>{{ provisional_weight }}kg</span></p>
-                        <p>Reserved Opportunities: <span>{{ reserved_weight }}kg</span></p>
-                        <p>Confirmed Opportunities: <span>{{ confirmed_weight }}kg</span></p>
+                        <p>Provisional Opportunities: <span id="provisional_weight">{{ provisional_weight }}</span>kg</p>
+                        <p>Reserved Opportunities: <span id="reserved_weight">{{ reserved_weight }}</span>kg</p>
+                        <p>Confirmed Opportunities: <span id="confirmed_weight">{{ confirmed_weight }}</span>kg</p>
                     </div>
                 </div>
             </div>
@@ -76,4 +76,5 @@
 {% endblock %}
 
 {% block postloadjs %}
+    <script src="{% static 'workload/js/workload.js' %}"></script>
 {% endblock %}
