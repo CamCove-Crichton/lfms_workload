@@ -67,7 +67,7 @@
     position: absolute;
     top: 20px;
     left: 35px;
-    animation: 13s red infinite;
+    animation: 4s red;
     border: dotted 2px red;
     box-shadow: 
       0 0 20px #111 inset,
@@ -85,7 +85,7 @@
     position: absolute;
     top: 145px;
     left: 35px;
-    animation: 13s yellow infinite;
+    animation: 4s yellow;
     box-shadow: 
       0 0 20px #111 inset,
       0 0 10px yellow;
@@ -105,38 +105,34 @@
     box-shadow: 
       0 0 20px #111 inset,
       0 0 10px lime;
-    animation: 13s green infinite;
+    animation: 4s green;
   }
   
   @keyframes red{
-    0%{opacity: 1}
-    20%{opacity: 1}
-    40%{opacity: 1}
-    60%{opacity: .1}
-    80%{opacity: .1}
-    100%{opacity: .1}
+    100%{opacity: 1}
+    80%{opacity: 1}
+    60%{opacity: 1}
+    40%{opacity: .1}
+    20%{opacity: .1}
+    0%{opacity: .1}
   }
   
   @keyframes yellow{
-    0%{opacity: .1}
-    20%{opacity: .1}
-    40%{opacity: 1}
-    50%{opacity: .1}
-    60%{opacity: .1}
-    80%{opacity: .1}
     100%{opacity: .1}
+    80%{opacity: .1}
+    60%{opacity: 1}
+    50%{opacity: .1}
+    40%{opacity: .1}
+    20%{opacity: .1}
+    0%{opacity: .1}
   }
   
   @keyframes green{
-    0%{opacity: .1}
-    20%{opacity: .1}
-    40%{opacity: .1}
+    100%{opacity: .1}
+    80%{opacity: .1}
     60%{opacity: 1}
-    80%{opacity: 1}
-    83%{opacity: .1}
-    86%{opacity: 1}
-    89%{opacity: .1}
-    93%{opacity: 1}
-    96%{opacity: .1}
-    100%{opacity: 1}
+    50%{opacity: .1}
+    40%{opacity: .1}
+    20%{opacity: .1}
+    0%{opacity: .1}
   }
