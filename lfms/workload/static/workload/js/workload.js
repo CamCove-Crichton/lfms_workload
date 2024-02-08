@@ -36,7 +36,6 @@ function setTrafficLightColour(weight) {
     green.classList.add('green', 'fade-out');
 
     if (weight > 40000) {
-        console.log('Weight greater than 40000');
         red.classList.remove('fade-out');
         red.classList.add('red', 'fade-in');
         if (yellow.classList.contains('fade-in')) {
@@ -47,7 +46,6 @@ function setTrafficLightColour(weight) {
             green.classList.add('fade-out');
         }
     } else if (weight > 30000) {
-        console.log('Weight greater than 30000');
         yellow.classList.remove('fade-out');
         yellow.classList.add('yellow', 'fade-in');
         if (red.classList.contains('fade-in')) {
@@ -58,7 +56,6 @@ function setTrafficLightColour(weight) {
             green.classList.add('fade-out');
         }
     } else {
-        console.log('Weight less than 30000');
         green.classList.add('green', 'fade-in');
         if (red.classList.contains('red')) {
             red.classList.remove('red', 'fade-in');
