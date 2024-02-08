@@ -9,54 +9,6 @@
     border: solid 5px #333;
   }
   
-  /* .trafficlight:before{
-    background: #222;
-    background-image: radial-gradient(#444, #000);
-    content: "";
-    width: 170px;
-    height: 150px;
-    margin: 0 auto;
-    position: absolute;
-    top: -20px;
-    margin-left: 0px;
-    border-radius: 50%;
-    z-index: -1;
-  } */
-  
-  /* .trafficlight:after{
-    background: #222;
-    background-image: linear-gradient(-0deg, #777 10%, #ccc 30%, #000);
-    content: "";
-    width: 50px;
-    height: 500px;
-    margin-left: 60px;
-    position: absolute;
-    top: 150px;
-    z-index: -1;
-  } */
-  
-  /* .protector{
-    background: transparent;
-    width: 180px;
-    height: 0;
-    position: absolute;
-    top: 20px;
-    left: -35px;
-    border-right: solid 30px transparent;
-    border-left: solid 30px transparent;
-    border-top: solid 90px #111;
-    border-radius: 10px;
-    z-index: -1;
-  } */
-  
-  /* .protector:nth-child(2){
-    top: 140px;
-  } */
-  
-  /* .protector:nth-child(3){
-    top: 260px;
-  } */
-  
   .red{
     background: red;
     background-image: radial-gradient(brown, transparent);
@@ -67,7 +19,6 @@
     position: absolute;
     top: 20px;
     left: 35px;
-    animation: 4s red;
     border: dotted 2px red;
     box-shadow: 
       0 0 20px #111 inset,
@@ -85,7 +36,6 @@
     position: absolute;
     top: 145px;
     left: 35px;
-    animation: 4s yellow;
     box-shadow: 
       0 0 20px #111 inset,
       0 0 10px yellow;
@@ -105,10 +55,33 @@
     box-shadow: 
       0 0 20px #111 inset,
       0 0 10px lime;
-    animation: 4s green;
+  }
+
+  .red.fade-out{
+    animation: fade-out 4s forwards;
+  }
+
+  .yellow.fade-out{
+    animation: fade-out 4s forwards;
+  }
+
+  .green.fade-out{
+    animation: fade-out 4s forwards;
+  }
+
+  .red.fade-in{
+    animation: fade-in 4s forwards;
+  }
+
+  .yellow.fade-in{
+    animation: fade-in 4s forwards;
+  }
+
+  .green.fade-in{
+    animation: fade-in 4s forwards;
   }
   
-  @keyframes red{
+  @keyframes fade-in{
     100%{opacity: 1}
     80%{opacity: 1}
     60%{opacity: 1}
@@ -116,23 +89,12 @@
     20%{opacity: .1}
     0%{opacity: .1}
   }
-  
-  @keyframes yellow{
-    100%{opacity: .1}
+
+  @keyframes fade-out{
+    0%{opacity: 1}
+    20%{opacity: 1}
+    40%{opacity: 1}
+    60%{opacity: .1}
     80%{opacity: .1}
-    60%{opacity: 1}
-    50%{opacity: .1}
-    40%{opacity: .1}
-    20%{opacity: .1}
-    0%{opacity: .1}
-  }
-  
-  @keyframes green{
     100%{opacity: .1}
-    80%{opacity: .1}
-    60%{opacity: 1}
-    50%{opacity: .1}
-    40%{opacity: .1}
-    20%{opacity: .1}
-    0%{opacity: .1}
   }
