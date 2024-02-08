@@ -31,11 +31,41 @@ function setTrafficLightColour(weight) {
     let yellow = document.getElementById('yellow');
     let green = document.getElementById('green');
 
+    red.classList.add('red', 'fade-out');
+    yellow.classList.add('yellow', 'fade-out');
+    green.classList.add('green', 'fade-out');
+
     if (weight > 40000) {
-        red.classList.add('red');
+        console.log('Weight greater than 40000');
+        red.classList.remove('fade-out');
+        red.classList.add('red', 'fade-in');
+        if (yellow.classList.contains('fade-in')) {
+            yellow.classList.remove('yellow', 'fade-in');
+            yellow.classList.add('fade-out');
+        } else if (green.classList.contains('fade-in')) {
+            green.classList.remove('green', 'fade-in');
+            green.classList.add('fade-out');
+        }
     } else if (weight > 30000) {
-        yellow.classList.add('yellow');
+        console.log('Weight greater than 30000');
+        yellow.classList.remove('fade-out');
+        yellow.classList.add('yellow', 'fade-in');
+        if (red.classList.contains('fade-in')) {
+            red.classList.remove('fade-in');
+            red.classList.add('fade-out');
+        } else if (green.classList.contains('fade-in')) {
+            green.classList.remove('fade-in');
+            green.classList.add('fade-out');
+        }
     } else {
-        green.classList.add('green');
+        console.log('Weight less than 30000');
+        green.classList.add('green', 'fade-in');
+        if (red.classList.contains('red')) {
+            red.classList.remove('red', 'fade-in');
+            red.classList.add('fade-out');
+        } else if (yellow.classList.contains('yellow')) {
+            yellow.classList.remove('yellow', 'fade-in');
+            yellow.classList.add('fade-out');
+        }
     }
 }
