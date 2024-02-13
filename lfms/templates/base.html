@@ -95,6 +95,20 @@
                   <a class="text-deco-none" href="{% url 'workload' %}">
                     <h6 class="text-uppercase">Workload</h6>
                   </a>
+                  <div class="nav-item dropdown mb-1">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Workload Settings</a>
+                    <div class="dropdown-menu p-2">
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="provisional_ops" name="Provisonal Opportunities" value="true" checked>
+                        <label for="provisional_ops" class="form-check-label">Include Provisional Opportunities</label>
+                      </div>
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="reserved_ops" name="Reserved Opportunities" value="true" checked>
+                        <label for="reserved_ops" class="form-check-label">Include Reserved Opportunities</label>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- // -->
                   <a class="text-deco-none" href="{% url 'account_logout' %}">
                     <h6 class="text-uppercase">Logout</h6>
                   </a>

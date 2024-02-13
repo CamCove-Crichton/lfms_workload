@@ -33,20 +33,8 @@
     <div class="container-fluid">
         <div class="row workload-container">
             <!-- Traffic Light Div -->
-            <!-- <div class="col-12 col-sm-6 col-lg-4 col-xl-3 order-sm-last d-flex justify-content-center align-items-center">
-                <div class="outer-traffic-light d-flex justify-content-center align-items-center">
-                    <div class="inner-traffic-light">
-                        <div class="traffic-light-colour"></div>
-                        <div class="traffic-light-colour"></div>
-                        <div class="traffic-light-colour"></div>
-                    </div>
-                </div>
-            </div> -->
             <div class="col-12 col-sm-6 col-lg-4 col-xl-3 order-sm-last d-flex justify-content-center align-items-center">
                 <div class="trafficlight d-flex justify-content-center align-items-center">
-                    <!-- <div class="protector"></div>
-                    <div class="protector"></div>
-                    <div class="protector"></div> -->
                     <div id="red"></div>
                     <div id="yellow"></div>
                     <div id="green"></div>
@@ -65,14 +53,9 @@
                     <div class="col-12">
                         <h2>Event Weights</h2>
                         <!-- Event weight details go here -->
-                        <input type="checkbox" id="provisional_ops" name="Provisonal Opportunities" value="true" checked>
-                        <label for="provisional_ops">Provisional Opportunities: <span id="provisional_weight">{{ provisional_weight }}</span>kg</label>
-                        <br>
-                        <input type="checkbox" id="reserved_ops" name="Reserved Opportunities" value="true" checked>
-                        <label for="reserved_ops">Reserved Opportunities: <span id="reserved_weight">{{ reserved_weight }}</span>kg</label>
-                        <br>
-                        <input type="checkbox" id="confirmed_ops" name="Confirmed Opportunities" value="true" checked>
-                        <label for="confirmed_ops">Confirmed Opportunities: <span id="confirmed_weight">{{ confirmed_weight }}</span>kg</label>
+                        <p>Provisional Opportunities: <span id="provisional_weight">{{ provisional_weight }}</span>kg</p>
+                        <p>Reserved Opportunities: <span id="reserved_weight">{{ reserved_weight }}</span>kg</p>
+                        <p>Confirmed Opportunities: <span id="confirmed_weight">{{ confirmed_weight }}</span>kg</p>
                     </div>
                 </div>
             </div>
