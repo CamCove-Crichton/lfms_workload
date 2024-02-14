@@ -98,3 +98,34 @@
     80%{opacity: .1}
     100%{opacity: .1}
   }
+
+
+  /* --------------------------------------------- Media Queries */
+  /* Medium Screens & up */
+  @media (min-width:768px) {
+    .trafficlight{
+      width: 255px;
+      height: 600px;
+    }
+
+    .red{
+      width: 150px;
+      height: 150px;
+      top: 30px;
+      left: 48px;
+    }
+
+    .yellow{
+      width: 150px;
+      height: 150px;
+      top: 225px;
+      left: 48px;
+    }
+
+    .green{
+      width: 150px;
+      height: 150px;
+      top: 420px;
+      left: 48px;
+    }
+  }
