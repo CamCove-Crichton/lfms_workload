@@ -21,6 +21,10 @@ function fetchData() {
         })
         .catch(error => {
             console.error('Error:', error);
+            const errorMsgDiv = document.querySelector('api-error-msg');
+            const errorMsg = document.createElement('p');
+            errorMsg.textContent = 'An error occurred while fetching the workload data: ' + error;
+            errorMsgDiv.appendChild(errorMsg);
         });
 }
 
