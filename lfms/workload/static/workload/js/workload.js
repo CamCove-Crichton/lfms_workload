@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded and parsed');
     fetchData();
     setInterval(fetchData, 2 * 60 * 60 * 1000) // Fetch data every 2 hours
+    getQuotes();
 });
 
 
@@ -63,13 +64,34 @@ function setTrafficLightColour(weight) {
             green.classList.add('fade-out');
         }
     } else {
+        green.classList.remove('fade-out');
         green.classList.add('green', 'fade-in');
-        if (red.classList.contains('red')) {
-            red.classList.remove('red', 'fade-in');
+        if (red.classList.contains('fade-in')) {
+            red.classList.remove('fade-in');
             red.classList.add('fade-out');
-        } else if (yellow.classList.contains('yellow')) {
-            yellow.classList.remove('yellow', 'fade-in');
+        } else if (yellow.classList.contains('fade-in')) {
+            yellow.classList.remove('fade-in');
             yellow.classList.add('fade-out');
         }
     }
+}
+
+
+/**
+ * Function to fetch a random quote from the quotable API
+ */
+function getQuotes() {
+    const requestOptions = {
+        method: "GET",
+        redirect: "follow"
+      };
+      
+      fetch("https://api.quotable.io/quotes/random?tags=wisdom|famous-quotes", requestOptions)
+        .then((response) => response.json())
+        .then((result) => {
+            console.log(result);
+            const quoteDiv = document.getElementById('quote');
+            quoteDiv.textContent = result[0].content;
+        })
+        .catch((error) => console.error(error));
 }
