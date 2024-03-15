@@ -32,7 +32,9 @@ else:
 DEBUG = config('DEBUG', default=DEFAULT_DEBUG, cast=bool)
 
 ALLOWED_HOSTS = [
-    'https://lfms-workload-1b9b2fad9cea.herokuapp.com/', 'localhost']
+    'https://lfms-workload-1b9b2fad9cea.herokuapp.com/',
+    'localhost', '127.0.0.1'
+    ]
 
 
 # Application definition
