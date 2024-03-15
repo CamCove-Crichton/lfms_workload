@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extra_meta %}
+    <meta
+    name="description"
+    content="An error display page 404, for cannot be found">
+
+    <meta name="author" content="Cameron Cove-Crichton">
+{% endblock %}
+
+{% block extra_title%}- 404{% endblock %}
+
+{% block page_header %}
+<div class="container header-container">
+    <div class="row">
+        <div class="col">
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <h1>404</h1>
+                <h2>Page Not Found</h2>
+                <p>Sorry, the page you are looking for cannot be found.</p>
+                <a class="btn btn-success" href="{% url 'workload' %}">Back to Safety</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
