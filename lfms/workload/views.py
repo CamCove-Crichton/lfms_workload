@@ -1,9 +1,11 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.http import JsonResponse
 from .api_calls import get_opportunities
 from .utils import weight_calc, date_check
 
 
+@login_required
 def workload(request):
     """
     A view to display the current workload and upcoming
