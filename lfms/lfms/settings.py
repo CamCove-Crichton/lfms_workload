@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 import os
 from pathlib import Path
-from lfms.env import SECRET_KEY, DEBUG
+from lfms.env import DEFAULT_SECRET_KEY, DEFAULT_DEBUG
 from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -23,12 +23,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = SECRET_KEY
+if 'SECRET_KEY' in os.environ:
+    SECRET_KEY = os.environ['SECRET_KEY']
+else:
+    SECRET_KEY = DEFAULT_SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = DEBUG
+DEBUG = config('DEBUG', default=DEFAULT_DEBUG, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'https://lfms-workload-1b9b2fad9cea.herokuapp.com/', 'localhost']
 
 
 # Application definition
@@ -100,10 +104,13 @@ LOGIN_REDIRECT_URL = '/'
 WSGI_APPLICATION = "lfms.wsgi.application"
 
 # API Configuration
-API_URL = config('API_URL', default='https://example.com/api/v1/your_endpoint/')
-X_SUBDOMAIN = config('X_SUBDOMAIN', default='your_subdomain')
-X_AUTH_TOKEN = config('X_AUTH_TOKEN', default='your_auth_token')
-COBRA_SESSION_TOKEN = config('COBRA_SESSION_TOKEN', default='your_session_token')
+API_URL = os.getenv('API_URL', config(
+    'API_URL', default='https://example.com/api/v1/your_endpoint/'))
+X_SUBDOMAIN = os.getenv('X_SUBDOMAIN', config(
+    'X_SUBDOMAIN', default='your_subdomain'))
+X_AUTH_TOKEN = os.getenv('X_AUTH_TOKEN', config(
+    'X_AUTH_TOKEN', default='your_auth_token'))
+# //COBRA_SESSION_TOKEN = config('COBRA_SESSION_TOKEN', default='your_session_token')
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
