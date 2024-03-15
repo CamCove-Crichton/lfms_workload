@@ -112,7 +112,6 @@ X_SUBDOMAIN = os.getenv('X_SUBDOMAIN', config(
     'X_SUBDOMAIN', default='your_subdomain'))
 X_AUTH_TOKEN = os.getenv('X_AUTH_TOKEN', config(
     'X_AUTH_TOKEN', default='your_auth_token'))
-# //COBRA_SESSION_TOKEN = config('COBRA_SESSION_TOKEN', default='your_session_token')
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
