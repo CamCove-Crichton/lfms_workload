@@ -1,1 +1,1 @@
-web: gunicorn lfms.wsgi:application
+web: gunicorn lfms_workload.wsgi:application
