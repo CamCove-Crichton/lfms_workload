@@ -1,1 +1,1 @@
-web: gunicorn lfms.wsgi --log-file -
+web: gunicorn lfms.wsgi:application
