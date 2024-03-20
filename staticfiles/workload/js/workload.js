@@ -2,8 +2,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded and parsed');
     fetchData();
-    setInterval(fetchData, 2 * 60 * 60 * 1000) // Fetch data every 2 hours
     getQuotes();
+    setInterval( () => {
+        fetchData();
+        getQuotes();
+    }, 2 * 60 * 60 * 1000);
 });
 
 
@@ -19,6 +22,7 @@ function fetchData() {
             const total = parseFloat(data.provisional_weight) + parseFloat(data.reserved_weight) + parseFloat(data.confirmed_weight);
             console.log(total);
             setTrafficLightColour(total);
+            assignWeightValues(data.provisional_weight, data.reserved_weight, data.confirmed_weight);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -74,6 +78,20 @@ function setTrafficLightColour(weight) {
             yellow.classList.add('fade-out');
         }
     }
+}
+
+
+/**
+ * Function to set assign the weight vaules to html elements
+ */
+function assignWeightValues(weightOne, weightTwo, weightThree) {
+    let provisional = document.getElementById('provisional_weight');
+    let reserved = document.getElementById('reserved_weight');
+    let confirmed = document.getElementById('confirmed_weight');
+
+    provisional.innerHTML = weightOne;
+    reserved.innerHTML = weightTwo;
+    confirmed.innerHTML = weightThree;
 }
 
 
