@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 import os
 from pathlib import Path
-from .env import DEFAULT_SECRET_KEY, DEFAULT_DEBUG
+from env import DEFAULT_SECRET_KEY, DEFAULT_DEBUG
 from decouple import config
 from dotenv import load_dotenv
 load_dotenv()
