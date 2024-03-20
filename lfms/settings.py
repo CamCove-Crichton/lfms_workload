@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 import os
 from pathlib import Path
-from env import DEFAULT_SECRET_KEY, DEFAULT_DEBUG
 from decouple import config
 from dotenv import load_dotenv
 load_dotenv()
@@ -25,13 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if 'SECRET_KEY' in os.environ:
-    SECRET_KEY = os.environ['SECRET_KEY']
-else:
-    SECRET_KEY = DEFAULT_SECRET_KEY
+SECRET_KEY = os.getenv(
+    'SECRET_KEY',
+    'django-insecure-hb_bg=ct=t_si#jt#n7b0+ceiwli=kpg8*v4994=(igws)v^0&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=DEFAULT_DEBUG, cast=bool)
+DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = ['*']
 
