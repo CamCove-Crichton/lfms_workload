@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 from .env import DEFAULT_SECRET_KEY, DEFAULT_DEBUG
 from decouple import config
+from dotenv import load_dotenv
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,10 +33,7 @@ else:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=DEFAULT_DEBUG, cast=bool)
 
-ALLOWED_HOSTS = [
-    'https://lfms-workload-1b9b2fad9cea.herokuapp.com/',
-    'localhost', '127.0.0.1'
-    ]
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
