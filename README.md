@@ -37,7 +37,13 @@ You can use the following placeholders as defaults:
 
 ## Deployment
 
-*deployment steps go here*
+- Created an app in Heroku, and added all the required config vars and the required buildpacks
+- Connected to the Heroku app via the CLI
+- Installed gunicorn to serve the application on Heroku
+- Created a Procfile to instruct Heroku on how run the application
+- Linked the Heroku app with the Github repo
+- Did not migrate any databases, as the application currently is not utilising any databases
+- Deployed to Heroku
 
 ---
 
@@ -77,12 +83,18 @@ You can now access the application at http://locahost:8000
 - Installed django-allauth and copied all the allauth templates into an accounts directory in the project level templates directory and made migrations as well as adjusted the setting file for the allauth package and added some config settings
 - Updated the django-allauth templates for a more custom display in line with the sites styling
 - Then updated the styling a bit more on the traffic light display, and will come back to it once receiving data with the use of the Current RMS api
+- Updated the workload views file to separate the api request to the api call function, to return the data in json format, and kept the view to return the template very simple
+- Created a workload JavaScript file to handle the api call using a fetch request which calls to the backend api call
+- Added in a JS function to handle the traffic light colour change
+- Lookup an inspirational quote API to utilise in the project, to display inspirational/famous quotes in the template
+- Created a function to assign the weight values to specific html elements to display the weights in a human readable format in the template
+- Within the event listener function, I then call the above JS functions, and then utilise the setInterval web api call, to then have the same JS functions being called repeatedly at specific intervals
 
 ---
 
 ## Future Developments
 
-*future developments will go here*
+- Will look to expand on the project as a whole, and add a vehicles or transport module
 
 ---
 
@@ -209,6 +221,8 @@ You can now access the application at http://locahost:8000
 ```
 
 ### Other Credits
+
+[Random Quotes API](https://github.com/lukePeavey/quotable) - Random Quote Genertor API used from lukePeavey/quoatable on Github
 
 ---
 
