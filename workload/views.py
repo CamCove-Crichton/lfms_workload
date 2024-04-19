@@ -35,9 +35,9 @@ def api_workload(request):
 
     # Check the dates of the opportunities and append to the lists
     date_check(
-        provisional_opportunities['opportunities'], provisional_within_date)
-    date_check(reserved_opportunities['opportunities'], reserved_within_date)
-    date_check(confirmed_opportunities['opportunities'], confirmed_within_date)
+        provisional_opportunities, provisional_within_date)
+    date_check(reserved_opportunities, reserved_within_date)
+    date_check(confirmed_opportunities, confirmed_within_date)
 
     # Calculate the weight of the opportunities
     provisional_weight = weight_calc(provisional_within_date)
