@@ -25,6 +25,7 @@ urlpatterns = [
     path('account/', include('allauth.urls')),
     path('', include('home.urls')),
     path('workload/', include('workload.urls')),
+    path('project_management/', include('project_management.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Custom error handlers
