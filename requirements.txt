@@ -7,7 +7,7 @@ defusedxml==0.7.1
 Django==5.0.8
 django-allauth==0.61.1
 gunicorn==22.0.0
-idna==3.6
+idna==3.7
 oauthlib==3.2.2
 packaging==24.0
 pillow==10.2.0
