@@ -1,0 +1,11 @@
+Hi Project Manager Name,
+
+Please find below a report of your open quotes in Current RMS:
+
+This is just some sample text to test the email comes through, and we will work on the content shortly.
+
+Names: {{ names }}
+
+Regards,
+
+LFPS AI
