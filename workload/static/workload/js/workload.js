@@ -204,6 +204,7 @@ function displayOpportunities(data) {
         // Get the cell to display the opportunity
         let cells = document.getElementsByClassName('cell-border');
         for (let j = 0; j < cells.length; j++) {
+            // Check the start date of the opportunity
             if (cells[j].id == startDate) {
                 let opportunityDiv = document.createElement('div');
                 opportunityDiv.classList.add('opportunity', 'card', 'text-center', 'mb-3', 'text-bg-success');
@@ -216,6 +217,8 @@ function displayOpportunities(data) {
                         <p class="card-text">${startTime}</p>
                     </div>`
                 cells[j].appendChild(opportunityDiv);
+
+                // Check the end date of the opportunity
             } else if (cells[j].id == endDate) {
                 let opportunityDiv = document.createElement('div');
                 opportunityDiv.classList.add('opportunity', 'card', 'text-center', 'mb-3', 'text-bg-danger');
