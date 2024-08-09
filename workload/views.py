@@ -48,6 +48,7 @@ def api_workload(request):
         'provisional_weight': provisional_weight,
         'reserved_weight': reserved_weight,
         'confirmed_weight': confirmed_weight,
+        'confirmed_opportunities': confirmed_opportunities,
     }
 
     return JsonResponse(data)

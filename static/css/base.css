@@ -13,6 +13,10 @@
 
 
 /* --------------------------------------------- General Styling Setup */
+header {
+    background-color: black;
+}
+
 body {
     font-family: 'LFPSStandard', sans-serif;
     background-color: black;

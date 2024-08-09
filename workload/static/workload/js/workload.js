@@ -1,9 +1,11 @@
 // Ensure the DOM is fully loaded before running the script
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded and parsed');
+    rollingCalendar();
     fetchData();
     getQuotes();
     setInterval( () => {
+        rollingCalendar();
         fetchData();
         getQuotes();
     }, 2 * 60 * 60 * 1000);
@@ -23,6 +25,7 @@ function fetchData() {
             console.log(total);
             setTrafficLightColour(total);
             assignWeightValues(data.provisional_weight, data.reserved_weight, data.confirmed_weight);
+            displayOpportunities(data.confirmed_opportunities);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -82,7 +85,7 @@ function setTrafficLightColour(weight) {
 
 
 /**
- * Function to set assign the weight vaules to html elements
+ * Function to set assign the weight values to html elements
  */
 function assignWeightValues(weightOne, weightTwo, weightThree) {
     let provisional = document.getElementById('provisional_weight');
@@ -109,7 +112,123 @@ function getQuotes() {
         .then((result) => {
             console.log(result);
             const quoteDiv = document.getElementById('quote');
+            const authorDiv = document.getElementById('author');
             quoteDiv.textContent = result[0].content;
+            authorDiv.textContent = result[0].author;
         })
         .catch((error) => console.error(error));
+}
+
+
+/** 
+ * Function to handle the rolling Calendar days
+ */
+function rollingCalendar() {
+    let today = new Date();
+    let rollingDates = Array.from({length: 28}, (_, i) => {
+        let date = new Date(today.getTime());
+        date.setDate(today.getDate() + i);
+        return date;
+    });
+
+    let cells = document.getElementsByClassName('cell-border');
+    for (let i = 0; i < cells.length; i++) {
+        cells[i].id = rollingDates[i].toISOString().split('T')[0];
+
+        let day = rollingDates[i].getDate();
+        let month = rollingDates[i].toLocaleString('default', { month: 'short' });
+        cells[i].textContent = `${day} ${month}`;
+    }
+
+    console.log(rollingDates);
+}
+
+
+/**
+ * Function to display the opportunities in the calendar
+ */
+function displayOpportunities(data) {
+    for (let i = 0; i < data.length; i++) {
+        let opportunity = data[i];
+        let startDate;
+        let startTime;
+        let loadStartsAt;
+        let endDate;
+        let endTime;
+        let unloadStartsAt;
+        let opportunityType;
+        let opportunityName = opportunity.subject;
+        let clientName = opportunity.member['name'];
+        let projectManager = opportunity.owner['name'];
+        let orderNumber = opportunity.number;
+
+        // Set the start date and time
+        if (opportunity.load_starts_at !== null) {
+            startDate = opportunity.load_starts_at.split('T')[0];
+            loadStartsAt = new Date(opportunity.load_starts_at);
+            startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        } else if (opportunity.deliver_starts_at !== null) {
+            startDate = opportunity.deliver_starts_at.split('T')[0];
+            loadStartsAt = new Date(opportunity.deliver_starts_at);
+            startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        } else {
+            startDate = opportunity.starts_at.split('T')[0];
+            loadStartsAt = new Date(opportunity.starts_at);
+            startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Set the end date and time
+        if (opportunity.unload_starts_at !== null) {
+            endDate = opportunity.unload_starts_at.split('T')[0];
+            unloadStartsAt = new Date(opportunity.unload_starts_at);
+            endTime = unloadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        } else if (opportunity.collect_starts_at !== null) {
+            endDate = opportunity.collect_starts_at.split('T')[0];
+            unloadStartsAt = new Date(opportunity.collect_starts_at);
+            endTime = unloadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        } else {
+            endDate = opportunity.ends_at.split('T')[0];
+            unloadStartsAt = new Date(opportunity.ends_at);
+            endTime = unloadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Set the opportunity type
+        if (opportunity.custom_fields['dry_hire'] === 'Yes') {
+            opportunityType = 'Dry Hire';
+        } else if (opportunity.custom_fields['dry_hire_transport'] === 'Yes') {
+            opportunityType = 'Dry Hire Transport';
+        } else {
+            opportunityType = 'Wet Hire';
+        }
+
+        // Get the cell to display the opportunity
+        let cells = document.getElementsByClassName('cell-border');
+        for (let j = 0; j < cells.length; j++) {
+            if (cells[j].id == startDate) {
+                let opportunityDiv = document.createElement('div');
+                opportunityDiv.classList.add('opportunity', 'card', 'text-center', 'mb-3', 'text-bg-success');
+                opportunityDiv.style.width = '100%';
+                opportunityDiv.setAttribute('data-hire-type', opportunityType);
+                opportunityDiv.innerHTML = `
+                    <div class="card-body">
+                        <h5 class="card-title">${opportunityName}</h5>
+                        <p class="card-text">${orderNumber}</p>
+                        <p class="card-text">${startTime}</p>
+                    </div>`
+                cells[j].appendChild(opportunityDiv);
+            } else if (cells[j].id == endDate) {
+                let opportunityDiv = document.createElement('div');
+                opportunityDiv.classList.add('opportunity', 'card', 'text-center', 'mb-3', 'text-bg-danger');
+                opportunityDiv.style.width = '100%';
+                opportunityDiv.setAttribute('data-hire-type', opportunityType);
+                opportunityDiv.innerHTML = `
+                    <div class="card-body">
+                        <h5 class="card-title">${opportunityName}</h5>
+                        <p class="card-text">${orderNumber}</p>
+                        <p class="card-text">${endTime}</p>
+                    </div>`
+                cells[j].appendChild(opportunityDiv);
+            }
+        }
+    }
 }
