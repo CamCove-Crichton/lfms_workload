@@ -105,13 +105,14 @@
   border: 2px solid #20C4F4;
 }
 
-/* .calendar-size .row {
-  margin: 0;
-} */
-
 .cell-border{
   border: 1px solid #20C4F4;
   min-height: 150px;
+}
+
+.text-wrap {
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 /* --------------------------------------------- Media Queries */

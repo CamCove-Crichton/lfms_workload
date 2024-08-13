@@ -26,6 +26,7 @@ function fetchData() {
             setTrafficLightColour(total);
             assignWeightValues(data.provisional_weight, data.reserved_weight, data.confirmed_weight);
             displayOpportunities(data.confirmed_opportunities);
+            displayOpportunities(data.active_opportunities);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -137,7 +138,8 @@ function rollingCalendar() {
 
         let day = rollingDates[i].getDate();
         let month = rollingDates[i].toLocaleString('default', { month: 'short' });
-        cells[i].textContent = `${day} ${month}`;
+        let weekday = rollingDates[i].toLocaleString('default', { weekday: 'short' });
+        cells[i].textContent = `${weekday} ${day} ${month}`;
     }
 
     console.log(rollingDates);
@@ -158,9 +160,10 @@ function displayOpportunities(data) {
         let unloadStartsAt;
         let opportunityType;
         let opportunityName = opportunity.subject;
-        let clientName = opportunity.member['name'];
-        let projectManager = opportunity.owner['name'];
+        // let clientName = opportunity.member['name'];
+        // let projectManager = opportunity.owner['name'];
         let orderNumber = opportunity.number;
+        let status = opportunity.status;
 
         // Set the start date and time
         if (opportunity.load_starts_at !== null) {
@@ -206,27 +209,29 @@ function displayOpportunities(data) {
         for (let j = 0; j < cells.length; j++) {
             // Check the start date of the opportunity
             if (cells[j].id == startDate) {
-                let opportunityDiv = document.createElement('div');
-                opportunityDiv.classList.add('opportunity', 'card', 'text-center', 'mb-3', 'text-bg-success');
-                opportunityDiv.style.width = '100%';
-                opportunityDiv.setAttribute('data-hire-type', opportunityType);
-                opportunityDiv.innerHTML = `
-                    <div class="card-body">
-                        <h5 class="card-title">${opportunityName}</h5>
-                        <p class="card-text">${orderNumber}</p>
-                        <p class="card-text">${startTime}</p>
-                    </div>`
-                cells[j].appendChild(opportunityDiv);
+                if (status !== 20) {
+                    let opportunityDiv = document.createElement('div');
+                    opportunityDiv.classList.add('opportunity', 'card', 'text-center', 'mb-1', 'text-bg-success');
+                    opportunityDiv.style.width = '100%';
+                    opportunityDiv.setAttribute('data-hire-type', opportunityType);
+                    opportunityDiv.innerHTML = `
+                        <div class="card-body">
+                            <p class="card-title"><em>${opportunityName}</em></p>
+                            <p class="card-text">${orderNumber}</p>
+                            <p class="card-text">${startTime}</p>
+                        </div>`
+                    cells[j].appendChild(opportunityDiv);
+                }
 
                 // Check the end date of the opportunity
             } else if (cells[j].id == endDate) {
                 let opportunityDiv = document.createElement('div');
-                opportunityDiv.classList.add('opportunity', 'card', 'text-center', 'mb-3', 'text-bg-danger');
+                opportunityDiv.classList.add('opportunity', 'card', 'text-center', 'mb-1', 'text-bg-danger');
                 opportunityDiv.style.width = '100%';
                 opportunityDiv.setAttribute('data-hire-type', opportunityType);
                 opportunityDiv.innerHTML = `
                     <div class="card-body">
-                        <h5 class="card-title">${opportunityName}</h5>
+                        <p class="card-title"><em>${opportunityName}</em></p>
                         <p class="card-text">${orderNumber}</p>
                         <p class="card-text">${endTime}</p>
                     </div>`

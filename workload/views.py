@@ -27,6 +27,8 @@ def api_workload(request):
         page=1, per_page=25, state_eq=2, status_eq=5)
     confirmed_opportunities = get_opportunities(
         page=1, per_page=25, state_eq=3, status_eq=0)
+    active_opportunities = get_opportunities(
+        page=1, per_page=25, state_eq=3, status_eq=20)
 
     # Create lists to store the opportunities within the next 14 days
     provisional_within_date = []
@@ -49,6 +51,7 @@ def api_workload(request):
         'reserved_weight': reserved_weight,
         'confirmed_weight': confirmed_weight,
         'confirmed_opportunities': confirmed_opportunities,
+        'active_opportunities': active_opportunities,
     }
 
     return JsonResponse(data)
