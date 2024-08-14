@@ -139,7 +139,7 @@ function rollingCalendar() {
         let day = rollingDates[i].getDate();
         let month = rollingDates[i].toLocaleString('default', { month: 'short' });
         let weekday = rollingDates[i].toLocaleString('default', { weekday: 'short' });
-        cells[i].textContent = `${weekday} ${day} ${month}`;
+        cells[i].innerHTML = `<p class="mb-1">${weekday} ${day} ${month}</p>`;
     }
 
     console.log(rollingDates);
@@ -162,7 +162,7 @@ function displayOpportunities(data) {
         let opportunityName = opportunity.subject;
         // let clientName = opportunity.member['name'];
         // let projectManager = opportunity.owner['name'];
-        let orderNumber = opportunity.number;
+        // let orderNumber = opportunity.number;
         let status = opportunity.status;
 
         // Set the start date and time
@@ -211,30 +211,22 @@ function displayOpportunities(data) {
             if (cells[j].id == startDate) {
                 if (status !== 20) {
                     let opportunityDiv = document.createElement('div');
-                    opportunityDiv.classList.add('opportunity', 'card', 'text-center', 'mb-1', 'text-bg-success');
+                    opportunityDiv.classList.add('opportunity');
                     opportunityDiv.style.width = '100%';
                     opportunityDiv.setAttribute('data-hire-type', opportunityType);
                     opportunityDiv.innerHTML = `
-                        <div class="card-body">
-                            <p class="card-title"><em>${opportunityName}</em></p>
-                            <p class="card-text">${orderNumber}</p>
-                            <p class="card-text">${startTime}</p>
-                        </div>`
+                        <span class="badge rounded-pill text-bg-success truncate">${opportunityName}</span>`
                     cells[j].appendChild(opportunityDiv);
                 }
 
                 // Check the end date of the opportunity
             } else if (cells[j].id == endDate) {
                 let opportunityDiv = document.createElement('div');
-                opportunityDiv.classList.add('opportunity', 'card', 'text-center', 'mb-1', 'text-bg-danger');
+                opportunityDiv.classList.add('opportunity');
                 opportunityDiv.style.width = '100%';
                 opportunityDiv.setAttribute('data-hire-type', opportunityType);
                 opportunityDiv.innerHTML = `
-                    <div class="card-body">
-                        <p class="card-title"><em>${opportunityName}</em></p>
-                        <p class="card-text">${orderNumber}</p>
-                        <p class="card-text">${endTime}</p>
-                    </div>`
+                    <span class="badge rounded-pill text-bg-danger truncate">${opportunityName}</span>`
                 cells[j].appendChild(opportunityDiv);
             }
         }

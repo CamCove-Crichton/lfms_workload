@@ -110,9 +110,11 @@
   min-height: 150px;
 }
 
-.text-wrap {
-  word-break: break-all;
-  overflow-wrap: break-word;
+.truncate{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 /* --------------------------------------------- Media Queries */
