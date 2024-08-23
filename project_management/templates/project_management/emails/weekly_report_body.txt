@@ -1,11 +1,18 @@
-Hi Project Manager Name,
+Hi {{ name }},
 
-Please find below a report of your open quotes in Current RMS:
+Please find below a report of your open & provisional quotes in Current RMS:
 
-This is just some sample text to test the email comes through, and we will work on the content shortly.
+Open Quotes:
+{% for quote in open_quotes %}
+    Order: {{ quote.order_number }}, Subject: {{ quote.subject }}, Client Confirmation Deadline: {{ quote.deadline }}
+{% endfor %}
 
-Names: {{ names }}
+Provisional Quotes:
+{% for order in provisional %}
+    Order: {{ order.order_number }}, Subject: {{ order.subject }}, Client Confirmation Deadline: {{ order.deadline }}
+{% endfor %}
+
 
 Regards,
 
-LFPS AI
+LFPS

@@ -110,6 +110,8 @@ WSGI_APPLICATION = "lfms.wsgi.application"
 # API Configuration
 API_URL = os.getenv('API_URL', config(
     'API_URL', default='https://example.com/api/v1/your_endpoint/'))
+USERS_API_URL = os.getenv('USERS_API_URL', config(
+    'USERS_API_URL', default='https://example.com/api/v1/your_endpoint/'))
 X_SUBDOMAIN = os.getenv('X_SUBDOMAIN', config(
     'X_SUBDOMAIN', default='your_subdomain'))
 X_AUTH_TOKEN = os.getenv('X_AUTH_TOKEN', config(

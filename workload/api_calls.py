@@ -60,3 +60,56 @@ def get_opportunities(
             return None
 
     return opportunities
+
+
+def get_users(page=1, per_page=100, filtermode='user'):
+    """
+    Get users from the API
+    """
+    # API configurations
+    url = settings.USERS_API_URL
+    subdomain = settings.X_SUBDOMAIN
+    auth_token = settings.X_AUTH_TOKEN
+
+    payload = {}
+
+    # API headers
+    headers = {
+        'X-SUBDOMAIN': subdomain,
+        'X-AUTH-TOKEN': auth_token,
+    }
+
+    users = []
+
+    while True:
+        # API parameters
+        params = {
+            'page': page,
+            'per_page': per_page,
+            'filtermode': filtermode,
+        }
+
+        response = requests.request(
+            "GET", url, params=params, headers=headers, data=payload)
+
+        if response.status_code == 200:
+            data = response.json()
+            print(f'Fetched page {page} of \
+{data["meta"]["total_row_count"]} users')
+
+            # Add current page data to users list
+            users.extend(data["members"])
+
+            # Check if there are more pages to fetch
+            if data["meta"]["total_row_count"] > data[
+                        "meta"]["per_page"] * data["meta"]["page"]:
+                # Increment page number
+                page += 1
+            else:
+                # Break the loop if all data is fetched
+                break
+        else:
+            print(f'Error: {response.status_code}')
+            return None
+
+    return users
