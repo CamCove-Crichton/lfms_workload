@@ -4,12 +4,12 @@ Please find below a report of your open & provisional quotes in Current RMS:
 
 Open Quotes:
 {% for quote in open_quotes %}
-    Order: {{ quote.order_number }}, Subject: {{ quote.subject }}, Client Confirmation Deadline: {{ quote.deadline }}
+    Order: {{ quote.order_number }}, Subject: {{ quote.subject }}
 {% endfor %}
 
 Provisional Quotes:
 {% for order in provisional %}
-    Order: {{ order.order_number }}, Subject: {{ order.subject }}, Client Confirmation Deadline: {{ order.deadline }}
+    Order: {{ order.order_number }}, Subject: {{ order.subject }}
 {% endfor %}
 
 
