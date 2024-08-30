@@ -1,0 +1,42 @@
+<p>Hi {{ name }},</p>
+
+<p>Please find below a report of your open & provisional quotes in Current RMS:</p>
+
+<h3>Open Quotes:</h3>
+{% if open_quotes %}
+    <ul>
+        {% for quote in open_quotes %}
+            <li>
+                <strong>Order:</strong> {{ quote.order_number }}, <strong>Subject:</strong> {{ quote.subject }}, <strong>Client Confirmation Deadline:</strong> {{ quote.deadline }}
+            </li>
+            <br>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>
+        You currently have no open quotes to follow up with.
+    </p>
+{% endif %}
+
+<h3>Provisional Quotes:</h3>
+{% if provisional %}
+    <ul>
+        {% for order in provisional %}
+            <li>
+                <strong>Order:</strong> {{ order.order_number }}, <strong>Subject:</strong> {{ order.subject }}, <strong>Client Confirmation Deadline:</strong> {{ order.deadline }}
+            </li>
+            <br>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>
+        You currently have no provisional quotes to follow up with.
+    </p>
+{% endif %}
+
+<p>
+    Regards,
+    <br>
+    <br>
+    LFPS
+</p>

@@ -1,10 +1,10 @@
-from django.core.mail import send_mail, EmailMessage
+from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
+
 from workload.api_calls import get_opportunities, get_users
-# from django.utils import timezone
-# from django.core.management.base import BaseCommand
+from .utils import date_deadline
 
 
 def send_weekly_email(context):
@@ -21,6 +21,14 @@ def send_weekly_email(context):
     # Get users from Current RMS
     users = get_users(page=1, per_page=100, filtermode='user')
 
+    # Create a list to store the opportunities within the next 10 days
+    open_quote_within_date = []
+    provisional_within_date = []
+
+    # Check the dates of the opportunities and append to the lists
+    date_deadline(open_quote_opportunities, open_quote_within_date)
+    date_deadline(provisional_opportunities, provisional_within_date)
+
     # Get a unique list of names of the owners of the open quote opportunities
     owners_set = set()
     # Iterate through the open quote and provisional opportunities
@@ -32,8 +40,6 @@ def send_weekly_email(context):
         # Add the owner names to the set
         owners_set.add(owner_open_quote)
         owners_set.add(owner_provisional)
-
-    print(owners_set)
 
     # Create a dictionary to store the jobs for each owner
     jobs = {}
@@ -54,9 +60,10 @@ def send_weekly_email(context):
             "provisional": [],
         }
         # Append the opportunities to the correct owner
-        for opportunity in open_quote_opportunities:
+        for opportunity in open_quote_within_date:
             if opportunity['owner']['name'] == name:
                 order = {
+                    'order_id': opportunity['id'],
                     'order_number': opportunity['number'],
                     'subject': opportunity['subject'],
                     'deadline': opportunity[
@@ -64,9 +71,10 @@ def send_weekly_email(context):
                 }
                 jobs[name]['open_quotes'].append(order)
 
-        for opportunity in provisional_opportunities:
+        for opportunity in provisional_within_date:
             if opportunity['owner']['name'] == name:
                 order = {
+                    'order_id': opportunity['id'],
                     'order_number': opportunity['number'],
                     'subject': opportunity['subject'],
                     'deadline': opportunity[
@@ -93,7 +101,7 @@ def send_weekly_email(context):
 
         # Render email body
         body = render_to_string(
-            'project_management/emails/weekly_report_body.txt', context)
+            'project_management/emails/weekly_report_body.html', context)
 
         # Strip HTML tags
         plain_text_body = strip_tags(body)
