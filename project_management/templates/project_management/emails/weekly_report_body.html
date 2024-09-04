@@ -7,7 +7,11 @@
     <ul>
         {% for quote in open_quotes %}
             <li>
-                <strong>Order:</strong> {{ quote.order_number }}, <strong>Subject:</strong> {{ quote.subject }}, <strong>Client Confirmation Deadline:</strong> {{ quote.deadline }}
+                <a href="{{ quote.url }}" target="_blank">
+                    <strong>Order:</strong> {{ quote.order_number }}, 
+                    <strong>Subject:</strong> {{ quote.subject }}, 
+                    <strong>Client Confirmation Deadline:</strong> {{ quote.deadline }}
+                </a>
             </li>
             <br>
         {% endfor %}
@@ -23,7 +27,11 @@
     <ul>
         {% for order in provisional %}
             <li>
-                <strong>Order:</strong> {{ order.order_number }}, <strong>Subject:</strong> {{ order.subject }}, <strong>Client Confirmation Deadline:</strong> {{ order.deadline }}
+                <a href="{{ order.url }}" target="_blank">
+                    <strong>Order:</strong> {{ order.order_number }}, 
+                    <strong>Subject:</strong> {{ order.subject }}, 
+                    <strong>Client Confirmation Deadline:</strong> {{ order.deadline }}
+                </a>
             </li>
             <br>
         {% endfor %}

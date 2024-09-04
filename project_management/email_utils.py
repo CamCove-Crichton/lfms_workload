@@ -63,22 +63,28 @@ def send_weekly_email(context):
         for opportunity in open_quote_within_date:
             if opportunity['owner']['name'] == name:
                 order = {
-                    'order_id': opportunity['id'],
                     'order_number': opportunity['number'],
                     'subject': opportunity['subject'],
                     'deadline': opportunity[
                         'custom_fields']['client_confirmation_deadline'],
+                    'url': (
+                        f'https://lfps.current-rms.com/opportunities/'
+                        f'{opportunity["id"]}'
+                    ),
                 }
                 jobs[name]['open_quotes'].append(order)
 
         for opportunity in provisional_within_date:
             if opportunity['owner']['name'] == name:
                 order = {
-                    'order_id': opportunity['id'],
                     'order_number': opportunity['number'],
                     'subject': opportunity['subject'],
                     'deadline': opportunity[
                         'custom_fields']['client_confirmation_deadline'],
+                    'url': (
+                        f'https://lfps.current-rms.com/opportunities/'
+                        f'{opportunity["id"]}'
+                    ),
                 }
                 jobs[name]['provisional'].append(order)
 
