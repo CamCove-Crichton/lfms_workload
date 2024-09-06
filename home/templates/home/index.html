@@ -1,7 +1,25 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block extra_meta %}
+    <meta
+    name="description"
+    content="A landing page display for users before they are logged in">
+
+    <meta name="author" content="Cameron Cove-Crichton">
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'home/css/home.css' %}">
+{% endblock %}
+
 {% block extra_title%}- Home{% endblock %}
 
 {% block content %}
+    <div class="fullscreen-video">
+        <video autoplay loop muted>
+            <source src="{% static 'home/videos/iPad Sign In App.mp4' %}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
 {% endblock %}
