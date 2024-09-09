@@ -16,6 +16,17 @@ def workload(request):
     return render(request, template)
 
 
+@login_required
+def workshop_workload(request):
+    """
+    A view to display the current workload for the
+    workshop
+    """
+    template = 'workload/workshop_workload.html'
+
+    return render(request, template)
+
+
 def api_workload(request):
     """
     A view to expose the workload data to the frontend

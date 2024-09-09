@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_meta %}
+    <meta
+    name="description"
+    content="A workload display representing the workshops upcoming workload requirements">
+
+    <meta name="author" content="Cameron Cove-Crichton">
+{% endblock %}
+
+{% block extra_css %}
+    
+{% endblock %}
+
+{% block extra_title%}- Workshop Workload{% endblock %}
+
+{% block page_header %}
+<div class="container header-container">
+    <div class="row">
+        <div class="col">
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+    <div>
+        <h1>
+            Workshop Workload
+        </h1>
+    </div>
+    
+{% endblock %}
+
+{% block postloadjs %}
+    <script src="{% static 'workload/js/workshop_workload.js' %}"></script>
+{% endblock %}
