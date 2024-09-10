@@ -16,7 +16,7 @@ def round_to_decimal(value, decimal_places=2):
     return round(Decimal(str(value)), decimal_places)
 
 
-def date_check(opportunities, within_date):
+def date_check(opportunities, within_date, days):
     """
     Check if the opportunities are within the given date range.
 
@@ -26,7 +26,7 @@ def date_check(opportunities, within_date):
     within the date range
     """
     today = datetime.now(timezone.utc)
-    two_weeks_later = today + timedelta(days=14)
+    two_weeks_later = today + timedelta(days=days)
 
     for opportunity in opportunities:
         try:

@@ -26,10 +26,17 @@
 {% endblock %}
 
 {% block content %}
-    <div>
-        <h1>
-            Workshop Workload
-        </h1>
+    <div class="container-fluid">
+        <div class="row workload-container">
+            <!-- Messages Div -->
+            <div class="col-12 api-error-msg">
+                <!-- Error messages go here -->
+            </div>
+           <!-- Scenic Event Div -->
+           <div id="scenic-opps" class="row">
+                <!-- Scenic Opportunities displayed here -->
+           </div>
+        </div>
     </div>
     
 {% endblock %}

@@ -2,11 +2,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded and parsed');
     rollingCalendar();
-    fetchData();
+    fetchData(14);
     getQuotes();
     setInterval( () => {
         rollingCalendar();
-        fetchData();
+        fetchData(14);
         getQuotes();
     }, 2 * 60 * 60 * 1000);
 });
@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
  * Function to fetch the data from the API from the backend
  * @returns {Promise} - The data from the API
  */
-function fetchData() {
-    fetch('/workload/api/workload/')
+function fetchData(days) {
+    fetch(`/workload/api/workload/?days=${days}`)
         .then(response => response.json())
         .then (data => {
             console.log(data);
