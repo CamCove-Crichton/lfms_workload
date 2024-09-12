@@ -113,3 +113,61 @@ def get_users(page=1, per_page=100, filtermode='user'):
             return None
 
     return users
+
+
+def get_products(
+        page=1,
+        per_page=20,
+        filtermode='active',
+        product_group='Scenic Calcs'):
+    """
+    Get products from the API
+    """
+    # API configurations
+    url = settings.PRODUCTS_API_URL
+    subdomain = settings.X_SUBDOMAIN
+    auth_token = settings.X_AUTH_TOKEN
+
+    payload = {}
+
+    # API headers
+    headers = {
+        'X-SUBDOMAIN': subdomain,
+        'X-AUTH-TOKEN': auth_token,
+    }
+
+    products = []
+
+    while True:
+        params = {
+            'page': page,
+            'per_page': per_page,
+            'filtermode': filtermode,
+            'q[name_or_product_group_name_or_tags_name_cont]': product_group,
+        }
+
+        response = requests.request(
+            "GET", url, params=params, headers=headers, data=payload)
+
+        if response.status_code == 200:
+            data = response.json()
+
+            print(f'Fetched page {page} of \
+{data["meta"]["total_row_count"]} products')
+
+            # Add the current page of data to the products list
+            products.extend(data["products"])
+
+            # Check if there are more pages to fetch
+            if data["meta"]["total_row_count"] > data[
+                    "meta"]["per_page"] * data["meta"]["page"]:
+                # Increment page number
+                page += 1
+            else:
+                # Break the loop if all data is fetched
+                break
+        else:
+            print(f'Error: {response.status_code}')
+            return None
+
+    return products
