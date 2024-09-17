@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block extra_css %}
-    
+    <link rel="stylesheet" href="{% static 'workload/css/workshop_workload.css' %}">
 {% endblock %}
 
 {% block extra_title%}- Workshop Workload{% endblock %}
@@ -26,6 +26,11 @@
 {% endblock %}
 
 {% block content %}
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <img src="{% static 'logos/Logo - on Transparent - small.png' %}" alt="light fantastic logo">
+        <i class="fa-solid fa-spinner fa-spin-pulse"></i>
+        <h1>Loading...</h1>
+    </div>
     <div class="container-fluid">
         <div class="row workload-container">
             <!-- Messages Div -->

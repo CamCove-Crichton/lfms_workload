@@ -45,6 +45,9 @@
     {% endblock %}
 
     {% block corejs %}
+    <!-- Font Awesome -->
+    <script src="https://kit.fontawesome.com/c1b12b8cf9.js" crossorigin="anonymous"></script>
+
     <!-- Bootstrap javascript -->
     <script
     src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
@@ -95,7 +98,7 @@
                   <a class="text-deco-none" href="{% url 'workload' %}">
                     <h6 class="text-uppercase">Workload</h6>
                   </a>
-                  <div class="nav-item dropdown mb-1">
+                  <!-- <div class="nav-item dropdown mb-1">
                     <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Workload Settings</a>
                     <div class="dropdown-menu p-2">
                       <div class="form-check">
@@ -107,10 +110,10 @@
                         <label for="reserved_ops" class="form-check-label">Include Reserved Opportunities</label>
                       </div>
                     </div>
-                  </div>
+                  </div> -->
                   <a class="text-deco-none" href="{% url 'workshop_workload' %}">
                     <h6 class="text-uppercase">Workshop Workload</h6>
-                  <!-- // -->
+                  </a>
                   <a class="text-deco-none" href="{% url 'account_logout' %}">
                     <h6 class="text-uppercase">Logout</h6>
                   </a>

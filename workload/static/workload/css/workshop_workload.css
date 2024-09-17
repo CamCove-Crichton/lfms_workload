@@ -1,0 +1,13 @@
+.provisional_background {
+    background-color: #0088f0;
+}
+
+.reserved_background {
+    background-color: #a30094;
+}
+
+.height-600 {
+    min-height: 600px;
+    max-height: 600px;
+    overflow: auto;
+}
