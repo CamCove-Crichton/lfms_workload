@@ -8,4 +8,8 @@ urlpatterns = [
         'workshop_workload/',
         views.workshop_workload,
         name='workshop_workload'),
+    path(
+        'api/workshop_workload/',
+        views.api_workshop_workload,
+        name='api_workshop_workload'),
 ]

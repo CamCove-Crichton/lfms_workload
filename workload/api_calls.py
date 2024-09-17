@@ -171,3 +171,48 @@ def get_products(
             return None
 
     return products
+
+
+def get_opportunity_items(
+        opportunity_id,
+        item_type_eq=2,
+        weight_eq=0.0,
+        rate_definition_id_eq=9):
+    """
+    Get opportunity items from the API
+    """
+    # API configurations
+    url = f'{settings.API_URL}/{opportunity_id}/opportunity_items'
+    print(url)
+    subdomain = settings.X_SUBDOMAIN
+    auth_token = settings.X_AUTH_TOKEN
+
+    payload = {}
+
+    opportunity_items = []
+
+    # API headers
+    headers = {
+        'X-SUBDOMAIN': subdomain,
+        'X-AUTH-TOKEN': auth_token,
+    }
+
+    params = {
+        'q[opportunity_item_type_eq]': item_type_eq,
+        'q[weight_eq]': weight_eq,
+        'q[rate_definition_id_eq]': rate_definition_id_eq,
+    }
+
+    response = requests.request(
+        "GET", url, params=params, headers=headers, data=payload)
+
+    if response.status_code == 200:
+        data = response.json()
+
+        # Add the current page of data to the opportunity items list
+        opportunity_items.extend(data["opportunity_items"])
+    else:
+        print(f'Error: {response.status_code}')
+        return None
+
+    return opportunity_items

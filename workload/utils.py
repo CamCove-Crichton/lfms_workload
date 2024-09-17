@@ -1,5 +1,6 @@
 from decimal import Decimal
 from datetime import timedelta, datetime, timezone
+from .api_calls import get_opportunity_items
 
 
 def round_to_decimal(value, decimal_places=2):
@@ -81,3 +82,19 @@ def weight_calc(opportunities_within_date):
     total_weight = sum(weights)
 
     return total_weight
+
+
+def get_opps_with_items(opportunities):
+    """
+    Get opportunity items for each opportunity in the list."""
+    opps_with_items = []
+    for opportunity in opportunities:
+        id = opportunity['id']
+        items = []
+        opportunity_items = get_opportunity_items(id)
+        items.extend(opportunity_items)
+        opps_with_items.append({
+            'opportunity': opportunity,
+            'items': items
+        })
+    return opps_with_items
