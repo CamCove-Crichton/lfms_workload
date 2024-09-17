@@ -20,7 +20,6 @@ function fetchData(days) {
     fetch(`/workload/api/workload/?days=${days}`)
         .then(response => response.json())
         .then (data => {
-            console.log(data);
             const total = parseFloat(data.provisional_weight) + parseFloat(data.reserved_weight) + parseFloat(data.confirmed_weight);
             console.log(total);
             setTrafficLightColour(total);
