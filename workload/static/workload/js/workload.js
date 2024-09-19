@@ -1,11 +1,11 @@
 // Ensure the DOM is fully loaded before running the script
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded and parsed');
-    rollingCalendar();
+    rollingCalendar(28);
     fetchData(14);
     getQuotes();
     setInterval( () => {
-        rollingCalendar();
+        rollingCalendar(28);
         fetchData(14);
         getQuotes();
     }, 2 * 60 * 60 * 1000);
@@ -29,7 +29,7 @@ function fetchData(days) {
         })
         .catch(error => {
             console.error('Error:', error);
-            const errorMsgDiv = document.querySelector('api-error-msg');
+            const errorMsgDiv = document.querySelector('#api-error-msg');
             const errorMsg = document.createElement('p');
             errorMsg.textContent = 'An error occurred while fetching the workload data: ' + error;
             errorMsgDiv.appendChild(errorMsg);
@@ -122,10 +122,11 @@ function getQuotes() {
 
 /** 
  * Function to handle the rolling Calendar days
+ * @param {number} days - The number of days to display in the rolling calendar
  */
-function rollingCalendar() {
+function rollingCalendar(days) {
     let today = new Date();
-    let rollingDates = Array.from({length: 28}, (_, i) => {
+    let rollingDates = Array.from({length: days}, (_, i) => {
         let date = new Date(today.getTime());
         date.setDate(today.getDate() + i);
         return date;
@@ -133,15 +134,15 @@ function rollingCalendar() {
 
     let cells = document.getElementsByClassName('cell-border');
     for (let i = 0; i < cells.length; i++) {
-        cells[i].id = rollingDates[i].toISOString().split('T')[0];
-
-        let day = rollingDates[i].getDate();
-        let month = rollingDates[i].toLocaleString('default', { month: 'short' });
-        let weekday = rollingDates[i].toLocaleString('default', { weekday: 'short' });
-        cells[i].innerHTML = `<p class="mb-1">${weekday} ${day} ${month}</p>`;
+        if (rollingDates[i]) {
+            cells[i].id = rollingDates[i].toISOString().split('T')[0];
+    
+            let day = rollingDates[i].getDate();
+            let month = rollingDates[i].toLocaleString('default', { month: 'short' });
+            let weekday = rollingDates[i].toLocaleString('default', { weekday: 'short' });
+            cells[i].innerHTML = `<p class="mb-1">${weekday} ${day} ${month}</p>`;
+        }
     }
-
-    console.log(rollingDates);
 }
 
 
@@ -151,63 +152,20 @@ function rollingCalendar() {
 function displayOpportunities(data) {
     for (let i = 0; i < data.length; i++) {
         let opportunity = data[i];
-        let startDate;
-        let startTime;
-        let loadStartsAt;
-        let endDate;
-        let endTime;
-        let unloadStartsAt;
-        let opportunityType;
         let opportunityName = opportunity.subject;
-        // let clientName = opportunity.member['name'];
-        // let projectManager = opportunity.owner['name'];
-        // let orderNumber = opportunity.number;
         let status = opportunity.status;
 
         // Set the start date and time
-        if (opportunity.load_starts_at !== null) {
-            startDate = opportunity.load_starts_at.split('T')[0];
-            loadStartsAt = new Date(opportunity.load_starts_at);
-            startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        } else if (opportunity.deliver_starts_at !== null) {
-            startDate = opportunity.deliver_starts_at.split('T')[0];
-            loadStartsAt = new Date(opportunity.deliver_starts_at);
-            startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        } else {
-            startDate = opportunity.starts_at.split('T')[0];
-            loadStartsAt = new Date(opportunity.starts_at);
-            startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        }
-
-        // Set the end date and time
-        if (opportunity.unload_starts_at !== null) {
-            endDate = opportunity.unload_starts_at.split('T')[0];
-            unloadStartsAt = new Date(opportunity.unload_starts_at);
-            endTime = unloadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        } else if (opportunity.collect_starts_at !== null) {
-            endDate = opportunity.collect_starts_at.split('T')[0];
-            unloadStartsAt = new Date(opportunity.collect_starts_at);
-            endTime = unloadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        } else {
-            endDate = opportunity.ends_at.split('T')[0];
-            unloadStartsAt = new Date(opportunity.ends_at);
-            endTime = unloadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        }
+        let datesAndTimes = setOpportunityDateAndTime(opportunity);
 
         // Set the opportunity type
-        if (opportunity.custom_fields['dry_hire'] === 'Yes') {
-            opportunityType = 'Dry Hire';
-        } else if (opportunity.custom_fields['dry_hire_transport'] === 'Yes') {
-            opportunityType = 'Dry Hire Transport';
-        } else {
-            opportunityType = 'Wet Hire';
-        }
+        let opportunityType = setOpportunityType(opportunity);
 
         // Get the cell to display the opportunity
         let cells = document.getElementsByClassName('cell-border');
         for (let j = 0; j < cells.length; j++) {
             // Check the start date of the opportunity
-            if (cells[j].id == startDate) {
+            if (cells[j].id == datesAndTimes.startDate) {
                 if (status !== 20) {
                     let opportunityDiv = document.createElement('div');
                     opportunityDiv.classList.add('opportunity');
@@ -219,7 +177,7 @@ function displayOpportunities(data) {
                 }
 
                 // Check the end date of the opportunity
-            } else if (cells[j].id == endDate) {
+            } else if (cells[j].id == datesAndTimes.endDate) {
                 let opportunityDiv = document.createElement('div');
                 opportunityDiv.classList.add('opportunity');
                 opportunityDiv.style.width = '100%';
@@ -230,4 +188,68 @@ function displayOpportunities(data) {
             }
         }
     }
+}
+
+/**
+ * A function to start and end date and time of the opportunity
+ * @param {object} opportunity - The opportunity object
+ */
+function setOpportunityDateAndTime(opportunity) {
+    let startDate;
+    let startTime;
+    let loadStartsAt;
+    let endDate;
+    let endTime;
+    let unloadStartsAt;
+
+    // Set the start date and time
+    if (opportunity.load_starts_at !== null) {
+        startDate = opportunity.load_starts_at.split('T')[0];
+        loadStartsAt = new Date(opportunity.load_starts_at);
+        startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    } else if (opportunity.deliver_starts_at !== null) {
+        startDate = opportunity.deliver_starts_at.split('T')[0];
+        loadStartsAt = new Date(opportunity.deliver_starts_at);
+        startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    } else {
+        startDate = opportunity.starts_at.split('T')[0];
+        loadStartsAt = new Date(opportunity.starts_at);
+        startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Set the end date and time
+    if (opportunity.unload_starts_at !== null) {
+        endDate = opportunity.unload_starts_at.split('T')[0];
+        unloadStartsAt = new Date(opportunity.unload_starts_at);
+        endTime = unloadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    } else if (opportunity.collect_starts_at !== null) {
+        endDate = opportunity.collect_starts_at.split('T')[0];
+        unloadStartsAt = new Date(opportunity.collect_starts_at);
+        endTime = unloadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    } else {
+        endDate = opportunity.ends_at.split('T')[0];
+        unloadStartsAt = new Date(opportunity.ends_at);
+        endTime = unloadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    return { startDate, startTime, endDate, endTime };
+}
+
+/**
+ * A function to set the opportunity type
+ * @param {object} opportunity - The opportunity object
+ */
+function setOpportunityType(opportunity) {
+    let opportunityType;
+
+    // Set the opportunity type
+    if (opportunity.custom_fields['dry_hire'] === 'Yes') {
+        opportunityType = 'Dry Hire';
+    } else if (opportunity.custom_fields['dry_hire_transport'] === 'Yes') {
+        opportunityType = 'Dry Hire Transport';
+    } else {
+        opportunityType = 'Wet Hire';
+    }
+
+    return opportunityType;
 }
