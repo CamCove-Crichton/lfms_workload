@@ -11,3 +11,7 @@
     max-height: 600px;
     overflow: auto;
 }
+
+.rounded-corners {
+    border-radius: 10px;
+}

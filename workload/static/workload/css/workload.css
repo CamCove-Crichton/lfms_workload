@@ -100,23 +100,6 @@
   100%{opacity: .1}
 }
 
-/* --------------------------------------------- Calendar Styling */
-.calendar-size{
-  border: 2px solid #20C4F4;
-}
-
-.cell-border{
-  border: 1px solid #20C4F4;
-  min-height: 150px;
-}
-
-.truncate{
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-}
-
 /* --------------------------------------------- Media Queries */
 /* Medium Screens & up */
 @media (min-width:768px) {
