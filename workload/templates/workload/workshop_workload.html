@@ -31,7 +31,8 @@
         <i class="fa-solid fa-spinner fa-spin-pulse"></i>
         <h1>Loading...</h1>
     </div>
-    <div class="container-fluid">
+
+    <div class="container">
         <div class="row workload-container">
             <!-- Messages Div -->
             <div id="api-error-msg" class="col-12">
@@ -134,6 +135,24 @@
            </div>
         </div>
     </div>
+
+    <!-- Scenic Calculation Modal -->
+    <div class="modal fade" id="scenicCalcModal" tabindex="-1" aria-labelledby="scenicCalcModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h1 class="modal-title fs-5" id="scenicCalcModalLabel">Modal title</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <!-- Scenic calculations will be inserted here -->
+            </div>
+            <div class="modal-footer">
+              <!-- Open in current button and close modal button inserted here -->
+            </div>
+          </div>
+        </div>
+      </div>
     
 {% endblock %}
 

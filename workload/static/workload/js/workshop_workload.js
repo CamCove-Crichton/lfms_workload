@@ -74,14 +74,13 @@ function displayOpportunities(data) {
         // Get the total number of hours from the scenic calc array
         let totalHours = calculateTotalHours(scenicCalcArray);
 
-        // Create a div to display the Scenic Calc items
-        let scenicCalcDiv = createScenicCalcDiv(scenicCalcArray);
+        // Get the number of working days from the total hours of the opportunity
+        let workingDays = calculateWorkingDays(totalHours);
 
         // Set the start date and time
         let dateAndTime = setOpportunityDateAndTime(opportunityEvent);
         let startDate = dateAndTime.startDate;
         let startTime = dateAndTime.startTime;
-        console.log(startDate);
 
         // Set the opportunity type
         let opportunityType = setOpportunityType(opportunityEvent);
@@ -104,12 +103,27 @@ function displayOpportunities(data) {
                     opportunityDiv.style.width = '100%';
                     opportunityDiv.classList.add('mb-3', 'rounded-corners');
                     opportunityDiv.setAttribute('data-hire-type', opportunityType);
-                    opportunityDiv.innerHTML = `
-                        <span class="badge rounded-pill truncate">${opportunityName}</span>
-                        <button type="button" class="btn btn-primary mb-1">
-                          ${totalHours} <span class="badge text-bg-secondary">#</span>
-                        </button>`;
+                    opportunityDiv.innerHTML = `<span class="badge rounded-pill truncate">${opportunityName}</span>`;
+                    
+                    // Create a button to open the modal
+                    let button = document.createElement('button');
+                    button.type = 'button';
+                    button.classList.add('btn', 'btn-primary', 'mb-1', 'openModalButton');
+                    button.setAttribute('data-bs-toggle', 'modal');
+                    button.setAttribute('data-bs-target', '#scenicCalcModal');
+                    button.textContent = `Total: ${totalHours} hours / ${workingDays} days `;
+                    let badge = document.createElement('span');
+                    badge.classList.add('badge', 'text-bg-secondary');
+                    badge.textContent = '#';
+                    button.appendChild(badge);
+
+                    // Append the button to the opportunityDiv
+                    opportunityDiv.appendChild(button);
+
                     cells[q].appendChild(opportunityDiv);
+
+                    // Call the function to update the modal title and body
+                    updateModalContent(button, scenicCalcArray, id, client, startDate, startTime, statusName, totalHours, workingDays);
                 }
             }
         }
@@ -216,11 +230,24 @@ function calculateTotalHours(calcArray) {
 }
 
 /**
- * Function to create a div to display the Scenic Calc items
+ * Function to calculate the number of working days from the total hours of the opportunity
+ * and round up to the nearest half day
+ * @param {number} totalHours - The total number of hours
+ * @returns {number} - The number of working days
+ */
+function calculateWorkingDays(totalHours) {
+    let workingHalfDays = Math.ceil(totalHours / 4);
+    let workingDays = workingHalfDays / 2;
+
+    return workingDays;
+}
+
+/**
+ * Function to create a div to display the Scenic Calc items and other opportunity details
  * @param {array} calcArray - The scenic calc array containing the item name and quantity in hours
  * @returns {object} - The scenic calc div
  */
-function createScenicCalcDiv(calcArray) {
+function createScenicCalcDiv(calcArray, client, startDate, startTime, status, totalHours, workingDays) {
     // Create a div to display the Scenic Calc items
     let scenicCalcDiv = document.createElement('div');
     scenicCalcDiv.classList.add('card-text');
@@ -232,7 +259,27 @@ function createScenicCalcDiv(calcArray) {
         scenicCalcDiv.appendChild(scenicCalcP);
     }
 
-    return scenicCalcDiv;
+    // Add the total hours and working days to the Scenic Calc div
+    let totalHoursP = document.createElement('p');
+    totalHoursP.innerHTML = `<span class="bold-text">Total:</span> ${totalHours} hours / ${workingDays} days`;
+
+    // Add other elements to the modal body
+    let clientP = additionalContent('Client', client);
+    let dateOutP = additionalContent('Date Out', startDate, startTime);
+    let statusP = additionalContent('Status', status);
+
+    // Get the modal body element
+    let modalBody = document.querySelector('#scenicCalcModal .modal-body');
+
+    // Clear the modal body before appending the scenicCalcDiv
+    modalBody.innerHTML = '';
+
+    // Append the elements to the modal body
+    modalBody.appendChild(clientP);
+    modalBody.appendChild(dateOutP);
+    modalBody.appendChild(statusP);
+    modalBody.appendChild(scenicCalcDiv);
+    modalBody.appendChild(totalHoursP);
 }
 
 /**
@@ -304,4 +351,69 @@ function rollingCalendar(days) {
             cells[i].innerHTML = `<p class="mb-1">${weekday} ${day} ${month}</p>`;
         }
     }
+}
+
+/**
+ * Function to get all the buttons with the class 'openModalButton'
+ * and add an event listener to each button to update the modal
+ */
+function updateModalContent(button, calcArray, id, client, startDate, startTime, status, totalHours, workingDays) {
+    button.addEventListener('click', function() {
+        // Get the opportunity name
+        let opportunityName = this.parentElement.querySelector('.badge').textContent;
+
+        // Get the modal title element
+        let modalTitle = document.querySelector('#scenicCalcModal .modal-title');
+
+        // Set the modal title
+        modalTitle.textContent = opportunityName;
+        modalTitle.classList.add('bold-text');
+
+        // Create the scenicCalcDiv and append it to the modal body
+        createScenicCalcDiv(calcArray, client, startDate, startTime, status, totalHours, workingDays);
+        openOpportunity(id);
+    });
+}
+
+/**
+ * Function to create buttons to open the opportunity in a new tab or close the modal
+ * @param {number} id - The opportunity ID
+ */
+function openOpportunity(id) {
+    let anchor = document.createElement('a');
+    anchor.href = `https://lfps.current-rms.com/opportunities/${id}`;
+    anchor.target = '_blank';
+    anchor.className = 'btn btn-primary';
+    anchor.textContent = 'Open in Current RMS';
+
+    let closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.className = 'btn btn-secondary';
+    closeButton.setAttribute('data-bs-dismiss', 'modal');
+    closeButton.textContent = 'Close';
+
+    // Get modal footer element
+    let modalFooter = document.querySelector('#scenicCalcModal .modal-footer');
+
+    // Clear the modal footer before appending the anchor
+    modalFooter.innerHTML = '';
+
+    // Append the anchor to the modal footer
+    modalFooter.appendChild(anchor);
+    modalFooter.appendChild(closeButton);
+
+}
+
+/**
+ * Function to add additional content to the modal
+ */
+function additionalContent(string, content, contentTwo=null) {
+    let contentP = document.createElement('p');
+    if (contentTwo) {
+        contentP.innerHTML = `<span class="bold-text">${string}:</span> ${content}, ${contentTwo}`
+    } else{
+        contentP.innerHTML = `<span class="bold-text">${string}:</span> ${content}`
+    }
+
+    return contentP;
 }
