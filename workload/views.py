@@ -5,7 +5,12 @@ from django.http import JsonResponse, QueryDict
 from .api_calls import (
     get_opportunities,
     get_products,)
-from .utils import weight_calc, date_check, get_opps_with_items
+from .utils import (
+    weight_calc,
+    date_check,
+    get_opps_with_items,
+    remove_product
+)
 
 
 @login_required
@@ -49,7 +54,7 @@ def api_workload(request: QueryDict):
     active_opportunities = get_opportunities(
         page=1, per_page=25, state_eq=3, status_eq=20)
 
-    # Create lists to store the opportunities within the next 14 days
+    # Create lists to store the opportunities within the specified days
     provisional_within_date = []
     reserved_within_date = []
     confirmed_within_date = []
@@ -93,13 +98,12 @@ def api_workshop_workload(request: QueryDict):
     confirmed_opportunities = get_opportunities(
         page=1, per_page=25, state_eq=3, status_eq=0)
 
-    active_products = get_products(
+    all_active_products = get_products(
         page=1, per_page=20, filtermode='active', product_group='Scenic Calcs')
 
-    # Create lists to store the opportunities within the next 14 days
-    # provisional_within_date = []
-    # reserved_within_date = []
-    # confirmed_within_date = []
+    active_products = remove_product(all_active_products, 4597)
+
+    # Create lists to store the opportunities within the specified days
     opportunities_within_date = []
 
     # Check the dates of the opportunities and append to the lists

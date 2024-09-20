@@ -98,3 +98,18 @@ def get_opps_with_items(opportunities):
             'items': items
         })
     return opps_with_items
+
+
+def remove_product(active_products, num):
+    """
+    Remove a specific product from the list of active products.
+
+    Parameters:
+    - active_products: The list of active products
+
+    Returns:
+    - The list of active products with the specified product removed
+    """
+    active_products = [
+        product for product in active_products if product['id'] != num]
+    return active_products
