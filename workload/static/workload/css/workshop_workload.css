@@ -6,6 +6,10 @@
     background-color: #a30094;
 }
 
+.open-background {
+    background-color: #5bc0de;
+}
+
 .height-600 {
     min-height: 600px;
     max-height: 600px;
