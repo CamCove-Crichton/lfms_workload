@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     previousOpportunityData = JSON.parse(localStorage.getItem('previousOpportunityData'));
     fetchData(91).then(data => {
         opportunityData = data;
-        compareOpportunityData(opportunityData, previousOpportunityData);
+        // compareOpportunityData(opportunityData, previousOpportunityData);
         displayOpportunities(opportunityData, previousOpportunityData);
         clickDisplayNone();
         previousOpportunityData = opportunityData;
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
             opportunityData = data;
             // Retrieve the previous opportunity data from local storage
             previousOpportunityData = JSON.parse(localStorage.getItem('previousOpportunityData'));
-            compareOpportunityData(opportunityData, previousOpportunityData);
+            // compareOpportunityData(opportunityData, previousOpportunityData);
             displayOpportunities(opportunityData, previousOpportunityData);
             clickDisplayNone();
             previousOpportunityData = opportunityData;
@@ -179,8 +179,8 @@ function displayOpportunities(currentData, previousData=null) {
                                 opportunityDiv.classList.add('mb-3', 'rounded-corners');
                                 opportunityDiv.setAttribute('data-hire-type', opportunityType);
                                 opportunityDiv.innerHTML = `<span class="badge rounded-pill truncate">${currentOpportunityName}</span>
-                                <span class="position-absolute top-0 start-100 translate-middle p-2 bg-warning border border-light rounded-circle click-display-none">
-                                    <span class="visually-hidden">New alerts</span>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning click-display-none">
+                                    <span>New</span>
                                 </span>`;
                                 
                                 
@@ -880,13 +880,13 @@ function compareScenicCalcModals(currentOpportunityElement, previousOpportunityE
                     matchFound = true;
                     if (currentScenicCalcQuantity > previousScenicCalcQuantity) {
                         scenicCalcP.innerHTML = `<span class="bold-text">${currentScenicCalcName}:</span> ${currentScenicCalcQuantity} hours
-                            <span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle click-display-none">
-                                <span class="visually-hidden">${quantityDifference}</span>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger click-display-none">
+                                <span>+${quantityDifference}</span>
                             </span>`;
                     } else if (currentScenicCalcQuantity < previousScenicCalcQuantity) {
                         scenicCalcP.innerHTML = `<span class="bold-text">${currentScenicCalcName}:</span> ${currentScenicCalcQuantity} hours
-                            <span class="position-absolute top-0 start-100 translate-middle p-2 bg-success border border-light rounded-circle click-display-none">
-                                <span class="visually-hidden">${quantityDifference}</span>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success click-display-none">
+                                <span>${quantityDifference}</span>
                             </span>`;
                     } else {
                         scenicCalcP.innerHTML = `<span class="bold-text">${currentScenicCalcName}:</span> ${currentScenicCalcQuantity} hours`;
@@ -898,8 +898,8 @@ function compareScenicCalcModals(currentOpportunityElement, previousOpportunityE
 
             if (!matchFound) {
                 scenicCalcP.innerHTML = `<span class="bold-text">${currentScenicCalcName}:</span> ${currentScenicCalcQuantity} hours
-                    <span class="position-absolute top-0 start-100 translate-middle p-2 bg-warning border border-light rounded-circle">
-                        <span class="visually-hidden">New alerts</span>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning click-display-none">
+                        <span>New</span>
                     </span>`;
                     scenicCalcDiv.appendChild(scenicCalcP);
             }
@@ -917,13 +917,13 @@ function compareScenicCalcModals(currentOpportunityElement, previousOpportunityE
         totalHoursP.classList.add('position-relative');
         if (currentTotalHours > previousTotalHours) {
             totalHoursP.innerHTML = `<span class="bold-text">Total:</span> ${currentTotalHours} hours / ${currentWorkingDays} days
-                <span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle click-display-none">
-                    <span class="visually-hidden">${workingDaysDifference}</span>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger click-display-none">
+                    <span>+${workingDaysDifference} days</span>
                 </span>`;
         } else if (currentTotalHours < previousTotalHours) {
             totalHoursP.innerHTML = `<span class="bold-text">Total:</span> ${currentTotalHours} hours / ${currentWorkingDays} days
-                <span class="position-absolute top-0 start-100 translate-middle p-2 bg-success border border-light rounded-circle click-display-none">
-                    <span class="visually-hidden">${workingDaysDifference}</span>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success click-display-none">
+                    <span>${workingDaysDifference} days</span>
                 </span>`;
         } else {
             totalHoursP.innerHTML = `<span class="bold-text">Total:</span> ${currentTotalHours} hours / ${currentWorkingDays} days`;
