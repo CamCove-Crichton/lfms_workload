@@ -634,15 +634,51 @@ function rollingCalendar(days) {
         return date;
     });
 
-    let cells = document.getElementsByClassName('cell-border');
-    for (let i = 0; i < cells.length; i++) {
-        if (rollingDates[i]) {
-            cells[i].id = rollingDates[i].toISOString().split('T')[0];
-    
-            let day = rollingDates[i].getDate();
-            let month = rollingDates[i].toLocaleString('default', { month: 'short' });
-            let weekday = rollingDates[i].toLocaleString('default', { weekday: 'short' });
-            cells[i].innerHTML = `<p class="mb-1">${weekday} ${day} ${month}</p>`;
+    // Map of month numbers to month names
+    let monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    // Get unique months
+    let uniqueMonths = new Set(rollingDates.map(date => monthNames[date.getMonth()]));
+
+    // Get the tbody
+    let tbody = document.querySelector('#scenic-calendar tbody');
+    // Set the rows
+    let rows = tbody.getElementsByTagName('tr');
+
+    for (let row of rows) {
+        if (uniqueMonths.has(row.id)) {
+            row.classList.remove('display-none');
+            let yearMonth = rollingDates.find(date => monthNames[date.getMonth()] === row.id);
+            if (yearMonth) {
+                let year = yearMonth.getFullYear();
+                let month = ('0' + (yearMonth.getMonth() + 1)).slice(-2); // Get month in "MM" format
+                row.setAttribute('data-year-month', `${year}${month}`);
+            }
+        }
+    }
+
+    // Sort the rows
+    let sortedRows = Array.from(rows).sort((a, b) => a.getAttribute('data-year-month') - b.getAttribute('data-year-month'));
+    for (let row of sortedRows) {
+        tbody.appendChild(row);
+    }
+
+    // Assign dates to the td elements
+    for (let date of rollingDates) {
+        let row = document.getElementById(monthNames[date.getMonth()]);
+        if (row) {
+            let cells = row.getElementsByClassName('cell-border');
+            let day = date.getDate() - 1;
+            if (cells[day]) {
+                cells[day].id = date.toISOString().split('T')[0];
+
+                // Set the inner HTML of the cell
+                let dayNum = date.getDate();
+                let monthShort = date.toLocaleString('default', {month: 'short'});
+                let weekday = date.toLocaleString('default', {weekday: 'short'});
+                cells[day].innerHTML = `<p class="mb-1">${weekday} ${dayNum} ${monthShort}</p>`;
+                cells[day].classList.remove('display-none');
+            }
         }
     }
 }

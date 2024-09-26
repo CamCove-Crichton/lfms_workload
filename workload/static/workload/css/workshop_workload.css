@@ -19,3 +19,19 @@
 .rounded-corners {
     border-radius: 10px;
 }
+
+.table-scrollable {
+    display: flex;
+    overflow-x: auto;
+}
+
+.table-scrollable td {
+    min-width: 250px;
+    max-width: 250px;
+    height: 250px;
+    vertical-align: top;
+}
+
+.display-none {
+    display: none;
+}
