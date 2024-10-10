@@ -116,18 +116,20 @@ function displayOpportunities(currentData, previousData=null) {
                                     // Create a weekends checkbox and append it to the opportunity div
                                     let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
                                     opportunityDiv.appendChild(weekendsCheckbox);
-
-                                    // Create a carpenters input field and append it to the opportunity div
-                                    let carpentersInput = createCarpentersInputField(currentOpportunityId);
-                                    opportunityDiv.appendChild(carpentersInput);
                                     
-                                    // Create a button to open the modal and add a badge
+                                    // Create a button to open the modal and create a badge
                                     let button = createModalButton(currentTotalHours, workingDays);
                                     let badge = createModalBadge(matchFound, currentTotalHours, previousTotalHours, totalHoursDifference);
+
+                                    // Create the carpenters input
+                                    let carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
+                                    let carpentersInputDiv = carpentersInput.carpentersDiv;
+                                    
+                                    // Append the badge to the button, then append the carpenters input & button to the opportunityDiv
                                     button.appendChild(badge);
-                
-                                    // Append the button to the opportunityDiv and append the opportunityDiv to the cell
+                                    opportunityDiv.appendChild(carpentersInputDiv);
                                     opportunityDiv.appendChild(button);
+                                    // Append the opportunityDiv to the cell
                                     cells[q].appendChild(opportunityDiv);
                 
                                     // Call the function to update the modal title and body
@@ -154,17 +156,19 @@ function displayOpportunities(currentData, previousData=null) {
                                 let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
                                 opportunityDiv.appendChild(weekendsCheckbox);
 
-                                // Create a carpenters input field and append it to the opportunity div
-                                let carpentersInput = createCarpentersInputField(currentOpportunityId);
-                                opportunityDiv.appendChild(carpentersInput);
-                                
-                                // Create a button to open the modal and add a badge
+                                // Create a button to open the modal and create a badge
                                 let button = createModalButton(currentTotalHours, workingDays);
                                 let badge = createModalBadge(matchFound, currentTotalHours);
+                                
+                                // Create the carpenters input
+                                let carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
+                                let carpentersInputDiv = carpentersInput.carpentersDiv;
+                                
+                                // Append the badge to the button, then append the carpenters input & button to the opportunityDiv
                                 button.appendChild(badge);
-            
-                                // Append the button to the opportunityDiv and append the opportunityDiv to the cell
+                                opportunityDiv.appendChild(carpentersInputDiv);
                                 opportunityDiv.appendChild(button);
+                                // Append the opportunityDiv to the cell
                                 cells[q].appendChild(opportunityDiv);
             
                                 // Call the function to update the modal title and body
@@ -188,17 +192,19 @@ function displayOpportunities(currentData, previousData=null) {
                             let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
                             opportunityDiv.appendChild(weekendsCheckbox);
 
-                            // Create a carpenters input field and append it to the opportunity div
-                            let carpentersInput = createCarpentersInputField(currentOpportunityId);
-                            opportunityDiv.appendChild(carpentersInput);
-                            
-                            // Create a button to open the modal and add a badge
+                            // Create a button to open the modal and create a badge
                             let button = createModalButton(currentTotalHours, workingDays);
                             let badge = createModalBadge();
+
+                            // Create the carpenters input
+                            let carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
+                            let carpentersInputDiv = carpentersInput.carpentersDiv;
+                            
+                            // Append the badge to the button, then append the carpenters input & button to the opportunityDiv
                             button.appendChild(badge);
-        
-                            // Append the button to the opportunityDiv and append the opportunityDiv to the cell
                             opportunityDiv.appendChild(button);
+                            opportunityDiv.appendChild(carpentersInputDiv);
+                            // Append the opportunityDiv to the cell
                             cells[q].appendChild(opportunityDiv);
         
                             // Call the function to update the modal title and body
@@ -387,9 +393,10 @@ function calculateTotalHours(calcArray) {
  * Function to calculate the number of working days from the total hours of the opportunity
  * and round up to the nearest half day
  * @param {number} totalHours - The total number of hours
+ * @param {number} carpentersInput - The number of carpenters input
  * @returns {number} - The number of working days
  */
-function calculateWorkingDays(totalHours) {
+function calculateWorkingDays(totalHours, carpentersInput) {
     // Check the total hours is a number
     if (isNaN(totalHours)) {
         console.error('Invalid input to calculateWorkingDays: totalHours must be a number');
@@ -400,8 +407,18 @@ function calculateWorkingDays(totalHours) {
         return 0;
     }
 
+    // Check the carpenters input is a number and is greater than 0
+    if (isNaN(carpentersInput) || carpentersInput <= 0) {
+        console.error('Invalid input to calculateWorkingDays: carpentersInput must be a number greater than 0');
+        const errorMsgDiv = document.querySelector('#api-error-msg');
+        const errorMsg = document.createElement('p');
+        errorMsg.textContent = 'An error occurred while running the calculateWorkingDays function: carpentersInput must be a number greater than 0';
+        errorMsgDiv.appendChild(errorMsg);
+        return 0;
+    }
+
     let workingHalfDays = Math.ceil(totalHours / 4);
-    let workingDays = workingHalfDays / 2;
+    let workingDays = (workingHalfDays / 2) / carpentersInput;
 
     return workingDays;
 }
@@ -731,13 +748,12 @@ function getOpportunityElementObjects(opportunityData) {
         if (opportunityData === null) {
             return [];
         } else {
-    
             let opportunities = opportunityData.opportunities_with_items;
             let scenicOpportunities = getScenicTagOpportunities(opportunities);
             let activeProducts = opportunityData.active_products;
             let opportunityElements = [];
             let opportunityElement = {};
-        
+
             // Iterate through the current scenic opportunities
             for (let i = 0; i < scenicOpportunities.length; i++) {
                 let scenicOpportunity = scenicOpportunities[i];
@@ -747,27 +763,31 @@ function getOpportunityElementObjects(opportunityData) {
                 let id = scenicOpportunity.opportunity['id'];
                 let client = scenicOpportunity.opportunity['member']['name'];
                 let opportunityItems = scenicOpportunity.items;
-        
+
                 // Check if the opportunity items are in the active products list
                 let itemNameArray = confirmItemsExistInActiveProducts(opportunityItems, activeProducts);
-        
+
                 // Calculate the total quantity of half hours for each item and convert to hours
                 let scenicCalcArray = calculateScenicCalcItemQuantity(itemNameArray);
-        
+
+                // Create the carpenters input field
+                let carpentersInput = createCarpentersInputField(id);
+                let carpentersInputValue = carpentersInput.inputValue;
+
                 // Get the total number of hours from the scenic calc array
                 let totalHours = calculateTotalHours(scenicCalcArray);
-        
+
                 // Get the number of working days from the total hours of the opportunity
-                let workingDays = calculateWorkingDays(totalHours);
-        
+                let workingDays = calculateWorkingDays(totalHours, carpentersInputValue);
+
                 // Set the start date and time
                 let dateAndTime = setOpportunityDateAndTime(scenicOpportunity);
                 let startDate = dateAndTime.startDate;
                 let startTime = dateAndTime.startTime;
-        
+
                 // Set the opportunity type
                 let opportunityType = setOpportunityType(scenicOpportunity);
-        
+
                 // Create the opportunity element object
                 opportunityElement = {
                     'id': id,
@@ -777,16 +797,16 @@ function getOpportunityElementObjects(opportunityData) {
                     'startTime': startTime,
                     'status': status,
                     'statusName': statusName,
+                    'numberOfCarpenters': carpentersInputValue,
                     'totalHours': totalHours,
                     'workingDays': workingDays,
                     'scenicCalcArray': scenicCalcArray,
                     'opportunityType': opportunityType
                 };
-        
+
                 // Append the opportunity element to the opportunityElements array
                 opportunityElements.push(opportunityElement);
             }
-        
             return opportunityElements;
         }
     } catch (error) {
@@ -963,10 +983,14 @@ function updatedModalElements(string, content, contentTwo=null) {
 /**
  * Function to create an input field for the number of carpenters working on the event
  * @param {number} id - The ID of the event
+ * @param {number} totalHours - The total number of hours
+ * @param {object} button - The button element
+ * @returns {object} - The div element and input field value
  */
-function createCarpentersInputField(id) {
+function createCarpentersInputField(id, totalHours=null, button=null) {
     // Create a div to hold the input field
     let numCarpentersDiv = document.createElement('div');
+    numCarpentersDiv.classList.add('mb-1');
 
     // Load the number of carpenters from local storage
     let savedCarpenters = localStorage.getItem(`carpenters-${id}`);
@@ -974,6 +998,7 @@ function createCarpentersInputField(id) {
     // Create the label and input field
     let numCarpentersLabel = document.createElement('label');
     numCarpentersLabel.htmlFor = `carpenters-${id}`;
+    numCarpentersLabel.classList.add('text-white', 'me-1');
     numCarpentersLabel.textContent = 'No. of Carpenters';
     let numCarpentersInput = document.createElement('input');
     numCarpentersInput.type = 'number';
@@ -990,23 +1015,35 @@ function createCarpentersInputField(id) {
 
     // Add an event listener to save the value whenever the input field changes
     numCarpentersInput.addEventListener('input', function() {
+        let value = Number(numCarpentersInput.value);
         // Make sure the value is not less than 1 or greater than 20
-        if (numCarpentersInput.value < 1) {
+        if (value < 1) {
             numCarpentersInput.value = 1;
-        } else if (numCarpentersInput.value > 20) {
+        } else if (value > 20) {
             numCarpentersInput.value = 20;
         }
 
         // Save the value to local storage
         localStorage.setItem(`carpenters-${id}`, numCarpentersInput.value);
+
+        if (totalHours && button) {
+            // Recalculate the working days
+            let workingDays = calculateWorkingDays(totalHours, Number(numCarpentersInput.value));
+    
+            // Update the button text
+            button.textContent = `Total: ${totalHours} hours / ${workingDays} days`;
+        }
     })
 
     // Append the label and input field to the div
     numCarpentersDiv.appendChild(numCarpentersLabel);
     numCarpentersDiv.appendChild(numCarpentersInput);
 
-    // Return the div
-    return numCarpentersDiv;
+    // Return the div & input field value
+    return {
+        'carpentersDiv': numCarpentersDiv,
+        'inputValue': numCarpentersInput.value
+    };
 }
 
 /**
@@ -1154,7 +1191,7 @@ function createWeekendCheckbox(id) {
     weekendDiv.classList.add('weekends-checkbox', 'mb-1');
     let weekendLabel = document.createElement('label');
     weekendLabel.htmlFor = `weekends-${id}`;
-    weekendLabel.classList.add('me-1');
+    weekendLabel.classList.add('text-white', 'me-1');
     weekendLabel.textContent = 'Include Weekends';
     let weekendInput = document.createElement('input');
     weekendInput.type = 'checkbox';
