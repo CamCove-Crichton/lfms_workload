@@ -113,6 +113,10 @@ function displayOpportunities(currentData, previousData=null) {
                                         workingDays, currentOpportunityName, matchFound, previousOpportunityName, currentStatusName, previousStatusName
                                     );
 
+                                    // Create a weekends checkbox and append it to the opportunity div
+                                    let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
+                                    opportunityDiv.appendChild(weekendsCheckbox);
+
                                     // Create a carpenters input field and append it to the opportunity div
                                     let carpentersInput = createCarpentersInputField(currentOpportunityId);
                                     opportunityDiv.appendChild(carpentersInput);
@@ -146,6 +150,10 @@ function displayOpportunities(currentData, previousData=null) {
                                 opportunityDiv.setAttribute('data-hire-type', opportunityType);
                                 opportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName, matchFound);
 
+                                // Create a weekends checkbox and append it to the opportunity div
+                                let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
+                                opportunityDiv.appendChild(weekendsCheckbox);
+
                                 // Create a carpenters input field and append it to the opportunity div
                                 let carpentersInput = createCarpentersInputField(currentOpportunityId);
                                 opportunityDiv.appendChild(carpentersInput);
@@ -175,6 +183,10 @@ function displayOpportunities(currentData, previousData=null) {
                             setDivStyle(opportunityDiv, status);
                             opportunityDiv.setAttribute('data-hire-type', opportunityType);
                             opportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName);
+
+                            // Create a weekends checkbox and append it to the opportunity div
+                            let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
+                            opportunityDiv.appendChild(weekendsCheckbox);
 
                             // Create a carpenters input field and append it to the opportunity div
                             let carpentersInput = createCarpentersInputField(currentOpportunityId);
@@ -957,16 +969,16 @@ function createCarpentersInputField(id) {
     let numCarpentersDiv = document.createElement('div');
 
     // Load the number of carpenters from local storage
-    let savedCarpenters = localStorage.getItem(id);
+    let savedCarpenters = localStorage.getItem(`carpenters-${id}`);
 
     // Create the label and input field
     let numCarpentersLabel = document.createElement('label');
-    numCarpentersLabel.htmlFor = id;
+    numCarpentersLabel.htmlFor = `carpenters-${id}`;
     numCarpentersLabel.textContent = 'No. of Carpenters';
     let numCarpentersInput = document.createElement('input');
     numCarpentersInput.type = 'number';
-    numCarpentersInput.id = id;
-    numCarpentersInput.name = id;
+    numCarpentersInput.id = `carpenters-${id}`;
+    numCarpentersInput.name = `carpenters-${id}`;
     numCarpentersInput.min = '1';
     numCarpentersInput.max = '20';
     numCarpentersInput.value = '1';
@@ -986,7 +998,7 @@ function createCarpentersInputField(id) {
         }
 
         // Save the value to local storage
-        localStorage.setItem(id, numCarpentersInput.value);
+        localStorage.setItem(`carpenters-${id}`, numCarpentersInput.value);
     })
 
     // Append the label and input field to the div
@@ -1130,4 +1142,39 @@ function setInnerHTML(workingDays=0, currentOpportunityName=null, matchFound=nul
     }
 
     return innerHTML;
+}
+
+/**
+ * Function to create a checkbox input field for the opportunity
+ * @param {number} id - The opportunity ID
+ * @returns {object} - The checkbox div element
+ */
+function createWeekendCheckbox(id) {
+    let weekendDiv = document.createElement('div');
+    weekendDiv.classList.add('weekends-checkbox', 'mb-1');
+    let weekendLabel = document.createElement('label');
+    weekendLabel.htmlFor = `weekends-${id}`;
+    weekendLabel.classList.add('me-1');
+    weekendLabel.textContent = 'Include Weekends';
+    let weekendInput = document.createElement('input');
+    weekendInput.type = 'checkbox';
+    weekendInput.id = `weekends-${id}`;
+    weekendInput.name = `weekends-${id}`;
+    weekendInput.value = 'weekends';
+
+    // Load the weekend value from local storage
+    let savedState = localStorage.getItem(`weekends-${id}`);
+    if (savedState !== null) {
+        weekendInput.checked = savedState === 'true';
+    }
+
+    // Save the checkbox state to local storage whenever the input field changes
+    weekendInput.addEventListener('change', function() {
+        localStorage.setItem(`weekends-${id}`, this.checked);
+    });
+
+    weekendDiv.appendChild(weekendLabel);
+    weekendDiv.appendChild(weekendInput);
+
+    return weekendDiv;
 }
