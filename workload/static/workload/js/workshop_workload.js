@@ -105,50 +105,25 @@ function displayOpportunities(currentData, previousData=null) {
                             // Check the start date of the opportunity
                             if (cells[q].id == startDate) {
                                 if (status !== 20) {
+                                    // Create the opportunity div, set the style, attributes and inner HTML
                                     let opportunityDiv = document.createElement('div');
-                                    opportunityDiv.classList.add('opportunity', 'position-relative');
-                                    if (status === 1) {
-                                        opportunityDiv.classList.add('provisional_background');
-                                    } else if (status === 5) {
-                                        opportunityDiv.classList.add('reserved_background');
-                                    } else {
-                                        opportunityDiv.classList.add('open-background');
-                                    }
-                                    opportunityDiv.style.width = '100%';
-                                    opportunityDiv.classList.add('mb-3', 'rounded-corners');
+                                    setDivStyle(opportunityDiv, status);
                                     opportunityDiv.setAttribute('data-hire-type', opportunityType);
-                                    if (currentOpportunityName !== previousOpportunityName || currentStatusName !== previousStatusName) {
-                                        opportunityDiv.innerHTML = `<span class="badge rounded-pill truncate">${currentOpportunityName}</span>
-                                        <span class="position-absolute top-0 start-100 translate-middle p-2 bg-info border border-light rounded-circle click-display-none">
-                                            <span class="visually-hidden">New alerts</span>
-                                        </span>`;
-                                    } else {
-                                        opportunityDiv.innerHTML = `<span class="badge rounded-pill truncate">${currentOpportunityName}</span>`;
-                                    }
+                                    opportunityDiv.innerHTML = setInnerHTML(
+                                        workingDays, currentOpportunityName, matchFound, previousOpportunityName, currentStatusName, previousStatusName
+                                    );
+
+                                    // Create a carpenters input field and append it to the opportunity div
+                                    let carpentersInput = createCarpentersInputField(currentOpportunityId);
+                                    opportunityDiv.appendChild(carpentersInput);
                                     
-                                    // Create a button to open the modal
-                                    let button = document.createElement('button');
-                                    button.type = 'button';
-                                    button.classList.add('btn', 'btn-primary', 'mb-1', 'openModalButton');
-                                    button.setAttribute('data-bs-toggle', 'modal');
-                                    button.setAttribute('data-bs-target', '#scenicCalcModal');
-                                    button.textContent = `Total: ${currentTotalHours} hours / ${workingDays} days`;
-                                    let badge = document.createElement('span');
-                                    badge.classList.add('badge', 'click-display-none');
-                                    if (currentTotalHours > previousTotalHours) {
-                                        badge.classList.add('bg-danger');
-                                        badge.textContent = `${totalHoursDifference}`;
-                                    } else if(currentTotalHours < previousTotalHours) {
-                                        badge.classList.add('bg-success');
-                                        badge.textContent = `${totalHoursDifference}`;
-                                    } else {
-                                        badge.style.display = 'none';
-                                    }
+                                    // Create a button to open the modal and add a badge
+                                    let button = createModalButton(currentTotalHours, workingDays);
+                                    let badge = createModalBadge(matchFound, currentTotalHours, previousTotalHours, totalHoursDifference);
                                     button.appendChild(badge);
                 
-                                    // Append the button to the opportunityDiv
+                                    // Append the button to the opportunityDiv and append the opportunityDiv to the cell
                                     opportunityDiv.appendChild(button);
-                
                                     cells[q].appendChild(opportunityDiv);
                 
                                     // Call the function to update the modal title and body
@@ -158,7 +133,6 @@ function displayOpportunities(currentData, previousData=null) {
                         }
                         break;
                     }
-
                 }
 
                 if (!matchFound) {
@@ -166,40 +140,23 @@ function displayOpportunities(currentData, previousData=null) {
                         // Check the start date of the opportunity
                         if (cells[q].id == startDate) {
                             if (status !== 20) {
+                                // Create the opportunity div, set the style, attributes and inner HTML
                                 let opportunityDiv = document.createElement('div');
-                                opportunityDiv.classList.add('opportunity', 'position-relative');
-                                if (status === 1) {
-                                    opportunityDiv.classList.add('provisional_background');
-                                } else if (status === 5) {
-                                    opportunityDiv.classList.add('reserved_background');
-                                } else {
-                                    opportunityDiv.classList.add('open-background');
-                                }
-                                opportunityDiv.style.width = '100%';
-                                opportunityDiv.classList.add('mb-3', 'rounded-corners');
+                                setDivStyle(opportunityDiv, status);
                                 opportunityDiv.setAttribute('data-hire-type', opportunityType);
-                                opportunityDiv.innerHTML = `<span class="badge rounded-pill truncate">${currentOpportunityName}</span>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning click-display-none">
-                                    <span>New</span>
-                                </span>`;
+                                opportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName, matchFound);
+
+                                // Create a carpenters input field and append it to the opportunity div
+                                let carpentersInput = createCarpentersInputField(currentOpportunityId);
+                                opportunityDiv.appendChild(carpentersInput);
                                 
-                                
-                                // Create a button to open the modal
-                                let button = document.createElement('button');
-                                button.type = 'button';
-                                button.classList.add('btn', 'btn-primary', 'mb-1', 'openModalButton');
-                                button.setAttribute('data-bs-toggle', 'modal');
-                                button.setAttribute('data-bs-target', '#scenicCalcModal');
-                                button.textContent = `Total: ${currentTotalHours} hours / ${workingDays} days`;
-                                let badge = document.createElement('span');
-                                badge.classList.add('badge', 'bg-warning', 'click-display-none');
-                                badge.textContent = `${currentTotalHours}`;
-                                
+                                // Create a button to open the modal and add a badge
+                                let button = createModalButton(currentTotalHours, workingDays);
+                                let badge = createModalBadge(matchFound, currentTotalHours);
                                 button.appendChild(badge);
             
-                                // Append the button to the opportunityDiv
+                                // Append the button to the opportunityDiv and append the opportunityDiv to the cell
                                 opportunityDiv.appendChild(button);
-            
                                 cells[q].appendChild(opportunityDiv);
             
                                 // Call the function to update the modal title and body
@@ -213,41 +170,23 @@ function displayOpportunities(currentData, previousData=null) {
                     // Check the start date of the opportunity
                     if (cells[q].id == startDate) {
                         if (status !== 20) {
+                            // Create the opportunity div, set the style, attributes and inner HTML
                             let opportunityDiv = document.createElement('div');
-                            opportunityDiv.classList.add('opportunity', 'position-relative');
-                            if (status === 1) {
-                                opportunityDiv.classList.add('provisional_background');
-                            } else if (status === 5) {
-                                opportunityDiv.classList.add('reserved_background');
-                            } else {
-                                opportunityDiv.classList.add('open-background');
-                            }
-                            opportunityDiv.style.width = '100%';
-                            opportunityDiv.classList.add('mb-3', 'rounded-corners');
+                            setDivStyle(opportunityDiv, status);
                             opportunityDiv.setAttribute('data-hire-type', opportunityType);
-                            opportunityDiv.innerHTML = `<span class="badge rounded-pill truncate">${currentOpportunityName}</span>
-                            <span class="position-absolute top-0 start-100 translate-middle p-2 bg-info border border-light rounded-circle click-display-none">
-                                <span class="visually-hidden">New alerts</span>
-                            </span>`;
+                            opportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName);
+
+                            // Create a carpenters input field and append it to the opportunity div
+                            let carpentersInput = createCarpentersInputField(currentOpportunityId);
+                            opportunityDiv.appendChild(carpentersInput);
                             
-                            
-                            // Create a button to open the modal
-                            let button = document.createElement('button');
-                            button.type = 'button';
-                            button.classList.add('btn', 'btn-primary', 'mb-1', 'openModalButton');
-                            button.setAttribute('data-bs-toggle', 'modal');
-                            button.setAttribute('data-bs-target', '#scenicCalcModal');
-                            button.textContent = `Total: ${currentTotalHours} hours / ${workingDays} days`;
-                            let badge = document.createElement('span');
-                            badge.classList.add('badge', 'text-bg-secondary');
-                            badge.textContent = 'New alerts';
-                            badge.style.display = 'none';
-                            
+                            // Create a button to open the modal and add a badge
+                            let button = createModalButton(currentTotalHours, workingDays);
+                            let badge = createModalBadge();
                             button.appendChild(badge);
         
-                            // Append the button to the opportunityDiv
+                            // Append the button to the opportunityDiv and append the opportunityDiv to the cell
                             opportunityDiv.appendChild(button);
-        
                             cells[q].appendChild(opportunityDiv);
         
                             // Call the function to update the modal title and body
@@ -677,6 +616,7 @@ function rollingCalendar(days) {
                 let monthShort = date.toLocaleString('default', {month: 'short'});
                 let weekday = date.toLocaleString('default', {weekday: 'short'});
                 cells[day].innerHTML = `<p class="mb-1">${weekday} ${dayNum} ${monthShort}</p>`;
+                cells[day].classList.add('position-relative');
                 cells[day].classList.remove('display-none');
             }
         }
@@ -686,6 +626,8 @@ function rollingCalendar(days) {
 /**
  * Function to get all the buttons with the class 'openModalButton'
  * and add an event listener to each button to update the modal
+ * @param {object} opportunityElementOne - The first opportunity element object
+ * @param {object} opportunityElementTwo - The second opportunity element object
  */
 function updateModalContent(button, opportunityElementOne, opportunityElementTwo=null) {
     let id = opportunityElementOne.id;
@@ -880,12 +822,12 @@ function compareScenicCalcModals(currentOpportunityElement, previousOpportunityE
                     matchFound = true;
                     if (currentScenicCalcQuantity > previousScenicCalcQuantity) {
                         scenicCalcP.innerHTML = `<span class="bold-text">${currentScenicCalcName}:</span> ${currentScenicCalcQuantity} hours
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger click-display-none">
+                            <span class="position-absolute top-0 end-0 badge rounded-pill bg-danger click-display-none">
                                 <span>+${quantityDifference}</span>
                             </span>`;
                     } else if (currentScenicCalcQuantity < previousScenicCalcQuantity) {
                         scenicCalcP.innerHTML = `<span class="bold-text">${currentScenicCalcName}:</span> ${currentScenicCalcQuantity} hours
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success click-display-none">
+                            <span class="position-absolute top-0 end-0 badge rounded-pill bg-success click-display-none">
                                 <span>${quantityDifference}</span>
                             </span>`;
                     } else {
@@ -898,7 +840,7 @@ function compareScenicCalcModals(currentOpportunityElement, previousOpportunityE
 
             if (!matchFound) {
                 scenicCalcP.innerHTML = `<span class="bold-text">${currentScenicCalcName}:</span> ${currentScenicCalcQuantity} hours
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning click-display-none">
+                    <span class="position-absolute top-0 end-0 badge rounded-pill bg-warning click-display-none">
                         <span>New</span>
                     </span>`;
                     scenicCalcDiv.appendChild(scenicCalcP);
@@ -917,12 +859,12 @@ function compareScenicCalcModals(currentOpportunityElement, previousOpportunityE
         totalHoursP.classList.add('position-relative');
         if (currentTotalHours > previousTotalHours) {
             totalHoursP.innerHTML = `<span class="bold-text">Total:</span> ${currentTotalHours} hours / ${currentWorkingDays} days
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger click-display-none">
+                <span class="position-absolute top-0 end-0 badge rounded-pill bg-danger click-display-none">
                     <span>+${workingDaysDifference} days</span>
                 </span>`;
         } else if (currentTotalHours < previousTotalHours) {
             totalHoursP.innerHTML = `<span class="bold-text">Total:</span> ${currentTotalHours} hours / ${currentWorkingDays} days
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success click-display-none">
+                <span class="position-absolute top-0 end-0 badge rounded-pill bg-success click-display-none">
                     <span>${workingDaysDifference} days</span>
                 </span>`;
         } else {
@@ -934,14 +876,12 @@ function compareScenicCalcModals(currentOpportunityElement, previousOpportunityE
         let currentStartDate = currentOpportunityElement.startDate;
         let currentStartTime = currentOpportunityElement.startTime;
         let currentStatusName = currentOpportunityElement.statusName;
-        // let currentOpportunityName = currentOpportunityElement.opportunityName;
     
         // Set the remaining previous opportunity elements
         let previousClientName = previousOpportunityElement.client;
         let previousStartDate = previousOpportunityElement.startDate;
         let previousStartTime = previousOpportunityElement.startTime;
         let previousStatusName = previousOpportunityElement.statusName;
-        // let previousOpportunityName = previousOpportunityElement.opportunityName;
 
         // Get the modal body element
         let modalBody = document.querySelector('#scenicCalcModal .modal-body');
@@ -995,17 +935,66 @@ function updatedModalElements(string, content, contentTwo=null) {
     contentP.classList.add('position-relative');
     if (contentTwo) {
         contentP.innerHTML = `<span class="bold-text">${string}:</span> ${content}, ${contentTwo}
-        <span class="position-absolute top-0 start-100 translate-middle p-2 bg-info border border-light rounded-circle click-display-none">
+        <span class="position-absolute top-0 end-0 p-2 bg-info border border-light rounded-circle click-display-none">
             <span class="visually-hidden">New alerts</span>
         </span>`;
     } else {
         contentP.innerHTML = `<span class="bold-text">${string}:</span> ${content}
-        <span class="position-absolute top-0 start-100 translate-middle p-2 bg-info border border-light rounded-circle click-display-none">
+        <span class="position-absolute top-0 end-0 p-2 bg-info border border-light rounded-circle click-display-none">
             <span class="visually-hidden">New alerts</span>
         </span>`;
     }
 
     return contentP;
+}
+
+/**
+ * Function to create an input field for the number of carpenters working on the event
+ * @param {number} id - The ID of the event
+ */
+function createCarpentersInputField(id) {
+    // Create a div to hold the input field
+    let numCarpentersDiv = document.createElement('div');
+
+    // Load the number of carpenters from local storage
+    let savedCarpenters = localStorage.getItem(id);
+
+    // Create the label and input field
+    let numCarpentersLabel = document.createElement('label');
+    numCarpentersLabel.htmlFor = id;
+    numCarpentersLabel.textContent = 'No. of Carpenters';
+    let numCarpentersInput = document.createElement('input');
+    numCarpentersInput.type = 'number';
+    numCarpentersInput.id = id;
+    numCarpentersInput.name = id;
+    numCarpentersInput.min = '1';
+    numCarpentersInput.max = '20';
+    numCarpentersInput.value = '1';
+
+    // Check if there is a saved value for the number of carpenters
+    if (savedCarpenters !== null) {
+        numCarpentersInput.value = savedCarpenters;
+    }
+
+    // Add an event listener to save the value whenever the input field changes
+    numCarpentersInput.addEventListener('input', function() {
+        // Make sure the value is not less than 1 or greater than 20
+        if (numCarpentersInput.value < 1) {
+            numCarpentersInput.value = 1;
+        } else if (numCarpentersInput.value > 20) {
+            numCarpentersInput.value = 20;
+        }
+
+        // Save the value to local storage
+        localStorage.setItem(id, numCarpentersInput.value);
+    })
+
+    // Append the label and input field to the div
+    numCarpentersDiv.appendChild(numCarpentersLabel);
+    numCarpentersDiv.appendChild(numCarpentersInput);
+
+    // Return the div
+    return numCarpentersDiv;
 }
 
 /**
@@ -1018,4 +1007,127 @@ function clickDisplayNone() {
             element.style.display = 'none';
         });
     });
+}
+
+/**
+ * Function to set the div width dynamically based on the number of days
+ */
+function setDivWidth(div, days) {
+    let width = days * 250 + 250;
+
+    // Set the width of the div
+    div.style.width = `${width}px`;
+
+    // Set the right property of the div to 0
+    div.style.right = '0';
+}
+
+/**
+ * Function to set the div style and background colour based on the opportunity status
+ * @param {object} div - The div element
+ * @param {number} status - The status of the opportunity
+ */
+function setDivStyle(div, status, workingDays) {
+    div.classList.add('opportunity', 'position-relative', 'mb-3', 'rounded-corners', 'div-border');
+    div.style.width = '100%';
+    if (status === 1) {
+        div.classList.add('provisional_background');
+    } else if (status === 5) {
+        div.classList.add('reserved_background');
+    } else {
+        div.classList.add('open-background');
+    }
+    // if (workingDays === 0) {
+    //     div.style.width = '100%';
+    // } else {
+    //     div.classList.add('pe-2', 'text-align-end');
+    //     setDivWidth(div, workingDays);
+    // }
+}
+
+/**
+ * Function to create a button to open the modal
+ * @param {number} totalHours - The total number of hours
+ * @param {number} workingDays - The number of working days
+ * @returns {object} - The button element
+ */
+function createModalButton(totalHours, workingDays) {
+    let button = document.createElement('button');
+    button.type = 'button';
+    button.classList.add('btn', 'btn-primary', 'mb-1', 'openModalButton');
+    button.setAttribute('data-bs-toggle', 'modal');
+    button.setAttribute('data-bs-target', '#scenicCalcModal');
+    button.textContent = `Total: ${totalHours} hours / ${workingDays} days`;
+
+    return button;
+}
+
+/**
+ * Function to create a badge for the modal button to display the total hours difference
+ * @param {number} currentTotalHours - The current total number of hours
+ * @param {number} previousTotalHours - The previous total number of hours
+ * @param {number} totalHoursDifference - The total hours difference
+ * @param {boolean} matchFound - The match found boolean
+ * @returns {object} - The badge element
+ */
+function createModalBadge(matchFound=null, currentTotalHours=null, previousTotalHours=null, totalHoursDifference=0) {
+    let badge = document.createElement('span');
+    badge.classList.add('badge', 'click-display-none');
+    if (matchFound === true && currentTotalHours !== null && previousTotalHours !== null) {
+        if (currentTotalHours > previousTotalHours) {
+            badge.classList.add('bg-danger');
+            badge.textContent = `+${totalHoursDifference}`;
+        } else if(currentTotalHours < previousTotalHours) {
+            badge.classList.add('bg-success');
+            badge.textContent = `${totalHoursDifference}`;
+        } else {
+            badge.style.display = 'none';
+        }
+    } else if (matchFound === false) {
+        badge.classList.add('bg-warning');
+        badge.textContent = `${currentTotalHours}`;
+    } else {
+        badge.classList.add('text-bg-secondary');
+        badge.textContent = 'New alerts';
+        badge.style.display = 'none';
+    }
+
+    return badge;
+}
+
+/**
+ * Function to set the innerHTML of the opportunity div element
+ * @param {number} workingDays - The number of working days
+ * @param {string} currentOpportunityName - The current opportunity name
+ * @param {boolean} matchFound - The match found boolean
+ * @param {string} previousOpportunityName - The previous opportunity name
+ * @param {string} currentStatusName - The current status name
+ * @param {string} previousStatusName - The previous status name
+ * @returns {string} - The innerHTML of the opportunity div
+ */
+function setInnerHTML(workingDays=0, currentOpportunityName=null, matchFound=null, previousOpportunityName=null, currentStatusName=null, previousStatusName=null) {
+    let innerHTML;
+    if (matchFound === true) {
+        if (currentOpportunityName !== previousOpportunityName || currentStatusName !== previousStatusName) {
+            innerHTML = `<span class="badge rounded-pill truncate ${workingDays > 0 ? 'text-align-end' : ''}">${currentOpportunityName}</span>
+            <span class="position-absolute top-0 end-0 p-2 bg-info border border-light rounded-circle click-display-none">
+                <span class="visually-hidden">New alerts</span>
+            </span>`
+
+        } else {
+            innerHTML = `<span class="badge rounded-pill truncate ${workingDays > 0 ? 'text-align-end' : ''}">${currentOpportunityName}</span>`;
+        }
+    } else if (matchFound === false) {
+        innerHTML = `<span class="badge rounded-pill truncate ${workingDays > 0 ? 'text-align-end' : ''}">${currentOpportunityName}</span>
+        <span class="position-absolute top-0 end-0 badge rounded-pill bg-warning click-display-none">
+            <span>New</span>
+        </span>`;
+    } else {
+        innerHTML = `<span class="badge rounded-pill truncate ${workingDays > 0 ? 'text-align-end' : ''}">${currentOpportunityName}</span>
+        <span class="position-absolute top-0 end-0 p-2 bg-info border border-light rounded-circle click-display-none">
+            <span class="visually-hidden">New alerts</span>
+        </span>`;
+    }
+
+    return innerHTML;
 }
