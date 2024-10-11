@@ -36,6 +36,14 @@ body {
     overflow: hidden;
 }
 
+.text-align-end {
+    text-align: end;
+}
+
+.text-white {
+    color: white;
+}
+
 /* --------------------------------------------- Containers */
 .header-container {
     padding-top: 184px;
