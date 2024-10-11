@@ -115,16 +115,37 @@ function displayOpportunities(currentData, previousData=null) {
 
                                     // Create a weekends checkbox and append it to the opportunity div
                                     let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
-                                    opportunityDiv.appendChild(weekendsCheckbox);
+                                    let weekendsCheckboxDiv = weekendsCheckbox.weekendDiv;
+                                    let includeWeekends = weekendsCheckbox.includeWeekends;
+                                    opportunityDiv.appendChild(weekendsCheckboxDiv);
+
                                     
                                     // Create a button to open the modal and create a badge
                                     let button = createModalButton(currentTotalHours, workingDays);
                                     let badge = createModalBadge(matchFound, currentTotalHours, previousTotalHours, totalHoursDifference);
-
+                                    
                                     // Create the carpenters input
                                     let carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
                                     let carpentersInputDiv = carpentersInput.carpentersDiv;
                                     
+                                    // Event listener for the includeWeekends checkbox
+                                    includeWeekends.addEventListener('change', function() {
+                                        // Recalculate workingDays based on the new number of carpenters
+                                        let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
+                                        let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
+                                        console.log(startBuildDate);
+                                        console.log(`Include weekends: ${includeWeekends.checked}`);
+                                    });
+
+                                    // Event listener for the carpenters input field
+                                    carpentersInput.inputField.addEventListener('change', function() {
+                                        // Recalculate workingDays based on the new number of carpenters
+                                        let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
+                                        let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
+                                        console.log(startBuildDate);
+                                        console.log(`Number of carpenters: ${carpentersInput.inputField.value}`);
+                                    });
+
                                     // Append the badge to the button, then append the carpenters input & button to the opportunityDiv
                                     button.appendChild(badge);
                                     opportunityDiv.appendChild(carpentersInputDiv);
@@ -154,7 +175,9 @@ function displayOpportunities(currentData, previousData=null) {
 
                                 // Create a weekends checkbox and append it to the opportunity div
                                 let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
-                                opportunityDiv.appendChild(weekendsCheckbox);
+                                let weekendsCheckboxDiv = weekendsCheckbox.weekendDiv;
+                                let includeWeekends = weekendsCheckbox.includeWeekends;
+                                opportunityDiv.appendChild(weekendsCheckboxDiv);
 
                                 // Create a button to open the modal and create a badge
                                 let button = createModalButton(currentTotalHours, workingDays);
@@ -163,6 +186,24 @@ function displayOpportunities(currentData, previousData=null) {
                                 // Create the carpenters input
                                 let carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
                                 let carpentersInputDiv = carpentersInput.carpentersDiv;
+
+                                // Event listener for the includeWeekends checkbox
+                                includeWeekends.addEventListener('change', function() {
+                                    // Recalculate workingDays based on the new number of carpenters
+                                    let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
+                                    let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
+                                    console.log(startBuildDate);
+                                    console.log(`Include weekends: ${includeWeekends.checked}`);
+                                });
+
+                                // Event listener for the carpenters input field
+                                carpentersInput.inputField.addEventListener('change', function() {
+                                    // Recalculate workingDays based on the new number of carpenters
+                                    let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
+                                    let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
+                                    console.log(startBuildDate);
+                                    console.log(`Number of carpenters: ${carpentersInput.inputField.value}`);
+                                });
                                 
                                 // Append the badge to the button, then append the carpenters input & button to the opportunityDiv
                                 button.appendChild(badge);
@@ -190,7 +231,9 @@ function displayOpportunities(currentData, previousData=null) {
 
                             // Create a weekends checkbox and append it to the opportunity div
                             let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
-                            opportunityDiv.appendChild(weekendsCheckbox);
+                            let weekendsCheckboxDiv = weekendsCheckbox.weekendDiv;
+                            let includeWeekends = weekendsCheckbox.includeWeekends;
+                            opportunityDiv.appendChild(weekendsCheckboxDiv);
 
                             // Create a button to open the modal and create a badge
                             let button = createModalButton(currentTotalHours, workingDays);
@@ -199,6 +242,24 @@ function displayOpportunities(currentData, previousData=null) {
                             // Create the carpenters input
                             let carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
                             let carpentersInputDiv = carpentersInput.carpentersDiv;
+
+                            // Event listener for the includeWeekends checkbox
+                            includeWeekends.addEventListener('change', function() {
+                                // Recalculate workingDays based on the new number of carpenters
+                                let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
+                                let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
+                                console.log(startBuildDate);
+                                console.log(`Include weekends: ${includeWeekends.checked}`);
+                            });
+
+                            // Event listener for the carpenters input field
+                            carpentersInput.inputField.addEventListener('change', function() {
+                                // Recalculate workingDays based on the new number of carpenters
+                                let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
+                                let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
+                                console.log(startBuildDate);
+                                console.log(`Number of carpenters: ${carpentersInput.inputField.value}`);
+                            });
                             
                             // Append the badge to the button, then append the carpenters input & button to the opportunityDiv
                             button.appendChild(badge);
@@ -417,8 +478,8 @@ function calculateWorkingDays(totalHours, carpentersInput) {
         return 0;
     }
 
-    let workingHalfDays = Math.ceil(totalHours / 4);
-    let workingDays = (workingHalfDays / 2) / carpentersInput;
+    let workingHalfDays = Math.ceil((totalHours / 4) / carpentersInput);
+    let workingDays = workingHalfDays / 2;
 
     return workingDays;
 }
@@ -1042,6 +1103,7 @@ function createCarpentersInputField(id, totalHours=null, button=null) {
     // Return the div & input field value
     return {
         'carpentersDiv': numCarpentersDiv,
+        'inputField': numCarpentersInput,
         'inputValue': numCarpentersInput.value
     };
 }
@@ -1184,7 +1246,7 @@ function setInnerHTML(workingDays=0, currentOpportunityName=null, matchFound=nul
 /**
  * Function to create a checkbox input field for the opportunity
  * @param {number} id - The opportunity ID
- * @returns {object} - The checkbox div element
+ * @returns {object} - The checkbox div element and the include weekends input field
  */
 function createWeekendCheckbox(id) {
     let weekendDiv = document.createElement('div');
@@ -1213,5 +1275,36 @@ function createWeekendCheckbox(id) {
     weekendDiv.appendChild(weekendLabel);
     weekendDiv.appendChild(weekendInput);
 
-    return weekendDiv;
+    return {
+        'weekendDiv': weekendDiv,
+        'includeWeekends': weekendInput
+    };
+}
+
+/**
+ * Function to create a start build date for the opportunity
+ * @param {number} workingsDays - The number of working days
+ * @param {string} dateOut - The date out of the opportunity
+ * @param {boolean} includeWeekends - The include weekends boolean
+ * @returns {object} - The start build date
+ */
+function createStartBuildDate(workingDays, dateOut, includeWeekends, id) {
+    let startBuildDate = new Date(dateOut);
+    workingDays = Math.ceil(workingDays);  //round up to the nearest whole number
+
+    if (!includeWeekends) {
+        while (workingDays > 0) {
+            startBuildDate.setDate(startBuildDate.getDate() - 1);
+            // If it is not a weekend
+            if (startBuildDate.getDay() !== 0 && startBuildDate.getDay() !== 6) {
+                workingDays--;
+            }
+        }
+    } else {
+        startBuildDate.setDate(startBuildDate.getDate() - workingDays);
+    }
+    // Save the start build date to local storage
+    localStorage.setItem(`start-build-date-${id}`, startBuildDate.toISOString());
+
+    return startBuildDate;
 }
