@@ -6,8 +6,13 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded and parsed');
     rollingCalendar(91);
     // Retrieve the previous opportunity data from local storage
-    previousOpportunityData = JSON.parse(localStorage.getItem('previousOpportunityData'));
+    let storedData = localStorage.getItem('previousOpportunityData');
+    previousOpportunityData = storedData ? JSON.parse(storedData) : null;
     fetchData(91).then(data => {
+        if (!data) {
+            console.error('fetchData returned no data');
+            return;
+        }
         opportunityData = data;
         // compareOpportunityData(opportunityData, previousOpportunityData);
         displayOpportunities(opportunityData, previousOpportunityData);
@@ -1070,7 +1075,7 @@ function createCarpentersInputField(id, totalHours=null, button=null) {
     numCarpentersInput.value = '1';
 
     // Check if there is a saved value for the number of carpenters
-    if (savedCarpenters !== null) {
+    if (savedCarpenters !== null && !isNaN(savedCarpenters)) {
         numCarpentersInput.value = savedCarpenters;
     }
 
@@ -1263,7 +1268,7 @@ function createWeekendCheckbox(id) {
 
     // Load the weekend value from local storage
     let savedState = localStorage.getItem(`weekends-${id}`);
-    if (savedState !== null) {
+    if (savedState === 'true' || savedState === 'false') {
         weekendInput.checked = savedState === 'true';
     }
 
@@ -1289,6 +1294,24 @@ function createWeekendCheckbox(id) {
  * @returns {object} - The start build date
  */
 function createStartBuildDate(workingDays, dateOut, includeWeekends, id) {
+    if (isNaN(Date.parse(dateOut))) {
+        console.error('Invalid input to createStartBuildDate: dateOut must be a valid date');
+        const errorMsgDiv = document.querySelector('#api-error-msg');
+        const errorMsg = document.createElement('p');
+        errorMsg.textContent = 'An error occurred while running the createStartBuildDate function: dateOut must be a valid date';
+        errorMsgDiv.appendChild(errorMsg);
+        return '';
+    }
+
+    if (typeof workingDays !== 'number') {
+        console.error('Invalid input to createStartBuildDate: workingDays must be a number');
+        const errorMsgDiv = document.querySelector('#api-error-msg');
+        const errorMsg = document.createElement('p');
+        errorMsg.textContent = 'An error occurred while running the createStartBuildDate function: workingDays must be a number';
+        errorMsgDiv.appendChild(errorMsg);
+        return '';
+    }
+
     let startBuildDate = new Date(dateOut);
     workingDays = Math.ceil(workingDays);  //round up to the nearest whole number
 
@@ -1305,6 +1328,8 @@ function createStartBuildDate(workingDays, dateOut, includeWeekends, id) {
     }
     // Save the start build date to local storage
     localStorage.setItem(`start-build-date-${id}`, startBuildDate.toISOString());
+
+    startBuildDate = startBuildDate.toISOString().split('T')[0];
 
     return startBuildDate;
 }
