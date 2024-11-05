@@ -39,3 +39,47 @@
 .div-border {
     border: 1px solid #fff;
 }
+
+.opportunity {
+    position: absolute;
+}
+
+.row-one {
+    top: 33px;
+}
+
+.row-two {
+    top: 169px;
+}
+
+.row-three {
+    top: 305px;
+}
+
+.row-four {
+    top: 441px;
+}
+
+.row-five {
+    top: 577px;
+}
+
+.row-six {
+    top: 713px;
+}
+
+.row-seven {
+    top: 849px;
+}
+
+.row-eight {
+    top: 985px;
+}
+
+.row-nine {
+    top: 1121px;
+}
+
+.row-ten {
+    top: 1257px;
+}
