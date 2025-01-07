@@ -1491,7 +1491,7 @@ function removeOldDiv(id) {
 function setRowClass(startBuildDate, dateOut, div) {
     let startId = startBuildDate;
     let endId = dateOut;
-    console.log(`Working on div ${div.id}`);
+    // console.log(`Working on div ${div.id}`);
 
     // Get the cells
     let cells = document.getElementsByClassName('cell-border');
@@ -1499,16 +1499,16 @@ function setRowClass(startBuildDate, dateOut, div) {
     // Create the row array
     let rowArray = ['row-one', 'row-two', 'row-three', 'row-four', 'row-five', 'row-six', 'row-seven', 'row-eight', 'row-nine', 'row-ten'];
 
+    // Track the assigned classes
+    let assignedClasses = new Set();
+
     for (let i = 0; i < cells.length; i++) {
         if (cells[i].id >= startId && cells[i].id <= endId) {
             let divs = cells[i].querySelectorAll('.opportunity');
-            console.log(`Cell ${cells[i].id} contains ${divs.length} divs`);
-            for (let j = 0; j < divs.length; j++) {
-                console.log(`Div ${divs[j].id} is in cell ${cells[i].id}`);
-            }
-
-            // Track assigned classes within the cell
-            let assignedClasses = new Set();
+            // console.log(`Cell ${cells[i].id} contains ${divs.length} divs`);
+            // for (let j = 0; j < divs.length; j++) {
+            //     console.log(`Div ${divs[j].id} is in cell ${cells[i].id}`);
+            // }
 
             // Collect already assigned classes
             divs.forEach(existingDiv => {
@@ -1525,7 +1525,7 @@ function setRowClass(startBuildDate, dateOut, div) {
             rowArray.forEach(rowClass => {
                 if (div.classList.contains(rowClass)) {
                     div.classList.remove(rowClass);
-                    console.log(`Removed class ${rowClass} from div ${div.id}`);
+                    // console.log(`Removed class ${rowClass} from div ${div.id}`);
                 }
             });
 
@@ -1533,7 +1533,7 @@ function setRowClass(startBuildDate, dateOut, div) {
             for (let k = 0; k < rowArray.length; k++) {
                 if (!assignedClasses.has(rowArray[k])) {
                     div.classList.add(rowArray[k]);
-                    console.log(`Assigned class ${rowArray[k]} to div ${div.id}`);
+                    // console.log(`Assigned class ${rowArray[k]} to div ${div.id}`);
                     break;
                 }
             }
