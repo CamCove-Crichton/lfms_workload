@@ -1453,3 +1453,27 @@ function adjustTableRowHeights() {
         row.style.height = `${maxHeight + 6}px`;
     })
 }
+
+/**
+ * Function to check if an opportunity spans across more than a single month
+ * @param {date} startDate - The start build date for the opportunity
+ * @param {date} endDate - The date out for the opportunity
+ * @returns {object} - An object containing `spansMultipleMonths` (boolean) and `monthDiff` (number)
+ */
+function checkOpportunityDuration(startDate, endDate) {
+    if (!(startDate instanceof Date) || !(endDate instanceof Date)) {
+        throw new Error("Invalid input: startDate and endDate must be Date objects");
+    }
+
+    let startMonth = startDate.getMonth();
+    let endMonth = endDate.getMonth();
+    let startYear = startDate.getFullYear();
+    let endYear = endDate.getFullYear();
+    
+    let monthDiff = (endYear - startYear) * 12 + (endMonth - startMonth);
+
+    return {
+        spansMultipleMonths: monthDiff > 0,
+        monthDiff,
+    };
+}
