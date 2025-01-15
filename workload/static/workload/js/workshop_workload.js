@@ -7,7 +7,11 @@ document.addEventListener('DOMContentLoaded', function() {
     rollingCalendar(91);
     // Retrieve the previous opportunity data from local storage
     let storedData = localStorage.getItem('previousOpportunityData');
-    previousOpportunityData = storedData ? JSON.parse(storedData) : null;
+    if (storedData && storedData !== "undefined") {
+        previousOpportunityData = JSON.parse(storedData);
+    } else {
+        previousOpportunityData = null;
+    }
     fetchData(91).then(data => {
         if (!data) {
             console.error('fetchData returned no data');
