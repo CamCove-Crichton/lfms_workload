@@ -124,12 +124,9 @@ function displayOpportunities(currentData, previousData=null) {
                                     );
 
                                     // Create a weekends checkbox and append it to the opportunity div
-                                    let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
-                                    let weekendsCheckboxDiv = weekendsCheckbox.weekendDiv;
-                                    let includeWeekends = weekendsCheckbox.includeWeekends;
+                                    let { weekendDiv: weekendsCheckboxDiv, includeWeekends } = createWeekendCheckbox(currentOpportunityId);
                                     opportunityDiv.appendChild(weekendsCheckboxDiv);
                                     let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
-
                                     
                                     // Create a button to open the modal and create a badge
                                     let button = createModalButton(currentTotalHours, workingDays);
@@ -229,9 +226,7 @@ function displayOpportunities(currentData, previousData=null) {
                                 opportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName, matchFound);
 
                                 // Create a weekends checkbox and append it to the opportunity div
-                                let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
-                                let weekendsCheckboxDiv = weekendsCheckbox.weekendDiv;
-                                let includeWeekends = weekendsCheckbox.includeWeekends;
+                                let { weekendDiv: weekendsCheckboxDiv, includeWeekends } = createWeekendCheckbox(currentOpportunityId);
                                 opportunityDiv.appendChild(weekendsCheckboxDiv);
                                 let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
 
@@ -322,9 +317,7 @@ function displayOpportunities(currentData, previousData=null) {
                             opportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName);
 
                             // Create a weekends checkbox and append it to the opportunity div
-                            let weekendsCheckbox = createWeekendCheckbox(currentOpportunityId);
-                            let weekendsCheckboxDiv = weekendsCheckbox.weekendDiv;
-                            let includeWeekends = weekendsCheckbox.includeWeekends;
+                            let { weekendDiv: weekendsCheckboxDiv, includeWeekends } = createWeekendCheckbox(currentOpportunityId);
                             opportunityDiv.appendChild(weekendsCheckboxDiv);
                             let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
 
