@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('fetchData returned no data');
             return;
         }
-        opportunityData = data;
+        opportunityData = getOpportunityElementObjects(data);
         // compareOpportunityData(opportunityData, previousOpportunityData);
         displayOpportunities(opportunityData, previousOpportunityData);
         clickDisplayNone();
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval( () => {
         rollingCalendar(91);
         fetchData(91).then(data => {
-            opportunityData = data;
+            opportunityData = getOpportunityElementObjects(data);
             // Retrieve the previous opportunity data from local storage
             previousOpportunityData = JSON.parse(localStorage.getItem('previousOpportunityData'));
             // compareOpportunityData(opportunityData, previousOpportunityData);
@@ -74,14 +74,14 @@ function fetchData(days) {
  */
 function displayOpportunities(currentData, previousData=null) {
     // Check for invalid input
-    if (!currentData || typeof currentData !== 'object') {
-        console.error('Invalid input to displayOpportunities: currentData must be an object');
+    if (!currentData || !Array.isArray(currentData)) {
+        console.error('Invalid input to displayOpportunities: currentData must be an array');
         return;
     }
     
     try {
         // Get the current & previous opportunity element objects
-        let currentOpportunityElements = getOpportunityElementObjects(currentData);
+        let currentOpportunityElements = currentData;
         
         // Create opportunity elements
         for (let i = 0; i < currentOpportunityElements.length; i++) {
@@ -99,7 +99,7 @@ function displayOpportunities(currentData, previousData=null) {
 
             if (previousData) {
                 // Get the cell to display the opportunity
-                let previousOpportunityElements = getOpportunityElementObjects(previousData);
+                let previousOpportunityElements = previousData;
                 for (let j = 0; j < previousOpportunityElements.length; j++) {
                     let previousOpportunity = previousOpportunityElements[j];
                     let previousOpportunityId = previousOpportunity.id;
@@ -907,13 +907,13 @@ function additionalContent(string, content, contentTwo=null) {
  * @param {object} previousData - The previous opportunity data
  */
 function compareOpportunityData(currentData, previousData=null) {
-    let currentOpportunityElements = getOpportunityElementObjects(currentData);
+    let currentOpportunityElements = currentData;
     console.log('Current opportunity elements');
     console.log(currentOpportunityElements);
 
     // Check if there is previous data
     if (previousData !== null) {
-        let previousOpportunityElements = getOpportunityElementObjects(previousData);
+        let previousOpportunityElements = previousData;
         console.log('Previous opportunity elements');
         console.log(previousOpportunityElements);
     }
