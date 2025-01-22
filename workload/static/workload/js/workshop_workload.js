@@ -1477,3 +1477,21 @@ function checkOpportunityDuration(startDate, endDate) {
         monthDiff,
     };
 }
+
+/**
+ * Function to get the last day of the month
+ * @param {string} dateString - A date string in the format "yyyy-mm-dd"
+ * @returns {string} The last day of the month for the given date in "yyyy-mm-dd" format
+ */
+function getLastDayOfMonth(dateString) {
+    const [year, month] = dateString.split('-').map(Number);
+    
+    // Create a date for the first day of the next month, then subtract one day
+    const nextMonth = new Date(year, month, 1); // month is 0-based
+    const lastDay = new Date(nextMonth.getTime() - 1);
+    
+    // Format the date to "yyyy-mm-dd"
+    const lastDayString = lastDay.toISOString().split('T')[0]; 
+    
+    return lastDayString;
+}
