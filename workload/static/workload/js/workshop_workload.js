@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         opportunityData = getOpportunityElementObjects(data);
-        // compareOpportunityData(opportunityData, previousOpportunityData);
+        compareOpportunityData(opportunityData, previousOpportunityData);
         displayOpportunities(opportunityData, previousOpportunityData);
         clickDisplayNone();
         previousOpportunityData = opportunityData;
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
             opportunityData = getOpportunityElementObjects(data);
             // Retrieve the previous opportunity data from local storage
             previousOpportunityData = JSON.parse(localStorage.getItem('previousOpportunityData'));
-            // compareOpportunityData(opportunityData, previousOpportunityData);
+            compareOpportunityData(opportunityData, previousOpportunityData);
             displayOpportunities(opportunityData, previousOpportunityData);
             clickDisplayNone();
             previousOpportunityData = opportunityData;
@@ -72,336 +72,220 @@ function fetchData(days) {
  * @param {object} currentData - The current opportunity data
  * @param {object} previousData - The previous opportunity data
  */
-function displayOpportunities(currentData, previousData=null) {
+function displayOpportunities(currentData, previousData = null) {
     // Check for invalid input
     if (!currentData || !Array.isArray(currentData)) {
         console.error('Invalid input to displayOpportunities: currentData must be an array');
         return;
     }
-    
+
     try {
-        // Get the current & previous opportunity element objects
-        let currentOpportunityElements = currentData;
-        
-        // Create opportunity elements
-        for (let i = 0; i < currentOpportunityElements.length; i++) {
+        currentData.forEach(currentOpportunity => {
             let matchFound = false;
-            let currentOpportunity = currentOpportunityElements[i];
-            let currentOpportunityId = currentOpportunity.id;
-            let currentOpportunityName = currentOpportunity.opportunityName;
-            let currentStatusName = currentOpportunity.statusName;
-            let currentTotalHours = currentOpportunity.totalHours;
-            let workingDays = currentOpportunity.workingDays;
-            let startDate = currentOpportunity.startDate;
-            let status = currentOpportunity.status;
-            let opportunityType = currentOpportunity.opportunityType;
-            let cells = document.getElementsByClassName('cell-border');
 
-            if (previousData) {
-                // Get the cell to display the opportunity
-                let previousOpportunityElements = previousData;
-                for (let j = 0; j < previousOpportunityElements.length; j++) {
-                    let previousOpportunity = previousOpportunityElements[j];
-                    let previousOpportunityId = previousOpportunity.id;
-                    let previousOpportunityName = previousOpportunity.opportunityName;
-                    let previousStatusName = previousOpportunity.statusName;
-                    let previousTotalHours = previousOpportunity.totalHours;
-                    let totalHoursDifference = currentTotalHours - previousTotalHours;
-                    if (currentOpportunityId === previousOpportunityId) {
-                        matchFound = true;
-                        for (let q = 0; q < cells.length; q++) {
-                            // Check the start date of the opportunity
-                            if (cells[q].id == startDate) {
-                                if (status !== 20) {
-                                    // Create the opportunity div, set the style, attributes and inner HTML
-                                    let opportunityDiv = document.createElement('div');
-                                    // Set the div ID
-                                    opportunityDiv.id = currentOpportunityId;
-                                    
-                                    opportunityDiv.setAttribute('data-hire-type', opportunityType);
-                                    opportunityDiv.innerHTML = setInnerHTML(
-                                        workingDays, currentOpportunityName, matchFound, previousOpportunityName, currentStatusName, previousStatusName
-                                    );
+            const {
+                id: currentOpportunityId,
+                startDate,
+                status,
+                workingDays
+            } = currentOpportunity;
 
-                                    // Create a weekends checkbox and append it to the opportunity div
-                                    let { weekendDiv: weekendsCheckboxDiv, includeWeekends } = createWeekendCheckbox(currentOpportunityId);
-                                    opportunityDiv.appendChild(weekendsCheckboxDiv);
-                                    let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
-                                    
-                                    // Create a button to open the modal and create a badge
-                                    let button = createModalButton(currentTotalHours, workingDays);
-                                    let badge = createModalBadge(matchFound, currentTotalHours, previousTotalHours, totalHoursDifference);
-                                    
-                                    // Create the carpenters input
-                                    let carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
-                                    let carpentersInputDiv = carpentersInput.carpentersDiv;
-                                    
-                                    // Event listener for the includeWeekends checkbox
-                                    includeWeekends.addEventListener('change', function() {
-                                        // Remove old div
-                                        removeOldDiv(currentOpportunityId);
+            let cell = document.getElementById(startDate);
 
-                                        // Recalculate workingDays based on the new number of carpenters
-                                        let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
-                                        let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
-                                        // console.log(`Start build date: ${startBuildDate}`);
-                                        // console.log(`Date Out: ${startDate}`);
-                                        // console.log(`Include weekends: ${includeWeekends.checked}`);
-                                        
-                                        // Create a new div
-                                        let newOpportunityDiv = document.createElement('div');
-                                        newOpportunityDiv.id = currentOpportunityId;
-                                        newOpportunityDiv.setAttribute('data-hire-type', opportunityType);
-                                        newOpportunityDiv.innerHTML = setInnerHTML(
-                                            workingDays, currentOpportunityName, matchFound, previousOpportunityName, currentStatusName, previousStatusName
-                                        );
-                                        newOpportunityDiv.appendChild(weekendsCheckboxDiv);
-                                        newOpportunityDiv.appendChild(carpentersInputDiv);
-                                        newOpportunityDiv.appendChild(button);
-                                        let cell = document.getElementById(startDate);
-                                        cell.appendChild(newOpportunityDiv);
-                                        setDivStyle(newOpportunityDiv, status, workingDays, startBuildDate, startDate);
-                                        adjustTableRowHeights();
-                                    });
+            if (cell && status !== 20) {
+                if (previousData) {
+                    previousData.forEach(previousOpportunity => {
+                        const { id: previousOpportunityId } = previousOpportunity;
 
-                                    // Event listener for the carpenters input field
-                                    carpentersInput.inputField.addEventListener('change', function() {
-                                        // Remove old div
-                                        removeOldDiv(currentOpportunityId);
+                        if (currentOpportunityId === previousOpportunityId) {
+                            matchFound = true;
+                            const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = createOpportunityElement(
+                                currentOpportunity, 
+                                previousOpportunity, 
+                                matchFound
+                            );
 
-                                        // Recalculate workingDays based on the new number of carpenters
-                                        let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
-                                        let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
-                                        // console.log(`Start build date: ${startBuildDate}`);
-                                        // console.log(`Date Out: ${startDate}`);
-                                        // console.log(`Number of carpenters: ${carpentersInput.inputField.value}`);
-
-                                        // Create a new div
-                                        let newOpportunityDiv = document.createElement('div');
-                                        newOpportunityDiv.id = currentOpportunityId;
-                                        newOpportunityDiv.setAttribute('data-hire-type', opportunityType);
-                                        newOpportunityDiv.innerHTML = setInnerHTML(
-                                            workingDays, currentOpportunityName, matchFound, previousOpportunityName, currentStatusName, previousStatusName
-                                        );
-                                        newOpportunityDiv.appendChild(weekendsCheckboxDiv);
-                                        newOpportunityDiv.appendChild(carpentersInputDiv);
-                                        newOpportunityDiv.appendChild(button);
-                                        let cell = document.getElementById(startDate);
-                                        cell.appendChild(newOpportunityDiv);
-                                        setDivStyle(newOpportunityDiv, status, workingDays, startBuildDate, startDate);
-                                        adjustTableRowHeights();
-                                    });
-
-                                    // Append the badge to the button, then append the carpenters input & button to the opportunityDiv
-                                    button.appendChild(badge);
-                                    opportunityDiv.appendChild(carpentersInputDiv);
-                                    opportunityDiv.appendChild(button);
-
-                                    // Append the opportunityDiv to the cell
-                                    cells[q].appendChild(opportunityDiv);
-
-                                    setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
-                                    adjustTableRowHeights();
-                
-                                    // Call the function to update the modal title and body
-                                    updateModalContent(button, currentOpportunity, previousOpportunity);
-                                }
-                            }
-                        }
-                        break;
-                    }
-                }
-
-                if (!matchFound) {
-                    for (let q = 0; q < cells.length; q++) {
-                        // Check the start date of the opportunity
-                        if (cells[q].id == startDate) {
-                            if (status !== 20) {
-                                // Create the opportunity div, set the style, attributes and inner HTML
-                                let opportunityDiv = document.createElement('div');
-                                // Set the div ID
-                                opportunityDiv.id = currentOpportunityId;
-
-                                opportunityDiv.setAttribute('data-hire-type', opportunityType);
-                                opportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName, matchFound);
-
-                                // Create a weekends checkbox and append it to the opportunity div
-                                let { weekendDiv: weekendsCheckboxDiv, includeWeekends } = createWeekendCheckbox(currentOpportunityId);
-                                opportunityDiv.appendChild(weekendsCheckboxDiv);
-                                let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
-
-                                // Create a button to open the modal and create a badge
-                                let button = createModalButton(currentTotalHours, workingDays);
-                                let badge = createModalBadge(matchFound, currentTotalHours);
-                                
-                                // Create the carpenters input
-                                let carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
-                                let carpentersInputDiv = carpentersInput.carpentersDiv;
-
-                                // Event listener for the includeWeekends checkbox
-                                includeWeekends.addEventListener('change', function() {
-                                    // Remove old div
-                                    removeOldDiv(currentOpportunityId);
-
-                                    // Recalculate workingDays based on the new number of carpenters
-                                    let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
-                                    let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
-                                    // console.log(startBuildDate);
-                                    // console.log(`Include weekends: ${includeWeekends.checked}`);
-
-                                    // Create a new div
-                                    let newOpportunityDiv = document.createElement('div');
-                                    newOpportunityDiv.id = currentOpportunityId;
-                                    newOpportunityDiv.setAttribute('data-hire-type', opportunityType);
-                                    newOpportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName, matchFound);
-                                    newOpportunityDiv.appendChild(weekendsCheckboxDiv);
-                                    newOpportunityDiv.appendChild(carpentersInputDiv);
-                                    newOpportunityDiv.appendChild(button);
-                                    let cell = document.getElementById(startDate);
-                                    cell.appendChild(newOpportunityDiv);
-                                    setDivStyle(newOpportunityDiv, status, workingDays, startBuildDate, startDate);
-                                    adjustTableRowHeights();
-                                });
-
-                                // Event listener for the carpenters input field
-                                carpentersInput.inputField.addEventListener('change', function() {
-                                    // Remove old div
-                                    removeOldDiv(currentOpportunityId);
-
-                                    // Recalculate workingDays based on the new number of carpenters
-                                    let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
-                                    let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
-                                    // console.log(startBuildDate);
-                                    // console.log(`Number of carpenters: ${carpentersInput.inputField.value}`);
-
-                                    // Create a new div
-                                    let newOpportunityDiv = document.createElement('div');
-                                    newOpportunityDiv.id = currentOpportunityId;
-                                    newOpportunityDiv.setAttribute('data-hire-type', opportunityType);
-                                    newOpportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName, matchFound);
-                                    newOpportunityDiv.appendChild(weekendsCheckboxDiv);
-                                    newOpportunityDiv.appendChild(carpentersInputDiv);
-                                    newOpportunityDiv.appendChild(button);
-                                    let cell = document.getElementById(startDate);
-                                    cell.appendChild(newOpportunityDiv);
-                                    setDivStyle(newOpportunityDiv, status, workingDays, startBuildDate, startDate);
-                                    adjustTableRowHeights();
-                                });
-                                
-                                // Append the badge to the button, then append the carpenters input & button to the opportunityDiv
-                                button.appendChild(badge);
-                                opportunityDiv.appendChild(carpentersInputDiv);
-                                opportunityDiv.appendChild(button);
-
-                                setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
-                                // Append the opportunityDiv to the cell
-                                cells[q].appendChild(opportunityDiv);
-            
-                                // Call the function to update the modal title and body
-                                updateModalContent(button, currentOpportunity);
-                            }
-                        }
-                    }
-                }
-            } else {
-                for (let q = 0; q < cells.length; q++) {
-                    // Check the start date of the opportunity
-                    if (cells[q].id == startDate) {
-                        if (status !== 20) {
-                            // Create the opportunity div, set the style, attributes and inner HTML
-                            let opportunityDiv = document.createElement('div');
-                            // Set the div ID
-                            opportunityDiv.id = currentOpportunityId;
-
-                            opportunityDiv.setAttribute('data-hire-type', opportunityType);
-                            opportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName);
-
-                            // Create a weekends checkbox and append it to the opportunity div
-                            let { weekendDiv: weekendsCheckboxDiv, includeWeekends } = createWeekendCheckbox(currentOpportunityId);
-                            opportunityDiv.appendChild(weekendsCheckboxDiv);
-                            let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
-
-                            // Create a button to open the modal and create a badge
-                            let button = createModalButton(currentTotalHours, workingDays);
-                            let badge = createModalBadge();
-
-                            // Create the carpenters input
-                            let carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
-                            let carpentersInputDiv = carpentersInput.carpentersDiv;
-
-                            // Event listener for the includeWeekends checkbox
-                            includeWeekends.addEventListener('change', function() {
-                                // Remove old div
-                                removeOldDiv(currentOpportunityId);
-
-                                // Recalculate workingDays based on the new number of carpenters
-                                let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
-                                let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
-                                // console.log(startBuildDate);
-                                // console.log(`Include weekends: ${includeWeekends.checked}`);
-
-                                // Create a new div
-                                let newOpportunityDiv = document.createElement('div');
-                                newOpportunityDiv.id = currentOpportunityId;
-                                newOpportunityDiv.setAttribute('data-hire-type', opportunityType);
-                                newOpportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName);
-                                newOpportunityDiv.appendChild(weekendsCheckboxDiv);
-                                newOpportunityDiv.appendChild(carpentersInputDiv);
-                                newOpportunityDiv.appendChild(button);
-                                let cell = document.getElementById(startDate);
-                                cell.appendChild(newOpportunityDiv);
-                                setDivStyle(newOpportunityDiv, status, workingDays, startBuildDate, startDate);
-                                adjustTableRowHeights();
-                            });
-
-                            // Event listener for the carpenters input field
-                            carpentersInput.inputField.addEventListener('change', function() {
-                                // Remove old div
-                                removeOldDiv(currentOpportunityId);
-
-                                // Recalculate workingDays based on the new number of carpenters
-                                let workingDays = calculateWorkingDays(currentTotalHours, carpentersInput.inputField.value);
-                                let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
-                                // console.log(startBuildDate);
-                                // console.log(`Number of carpenters: ${carpentersInput.inputField.value}`);
-
-                                // Create a new div
-                                let newOpportunityDiv = document.createElement('div');
-                                newOpportunityDiv.id = currentOpportunityId;
-                                newOpportunityDiv.setAttribute('data-hire-type', opportunityType);
-                                newOpportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName);
-                                newOpportunityDiv.appendChild(weekendsCheckboxDiv);
-                                newOpportunityDiv.appendChild(carpentersInputDiv);
-                                newOpportunityDiv.appendChild(button);
-                                let cell = document.getElementById(startDate);
-                                cell.appendChild(newOpportunityDiv);
-                                setDivStyle(newOpportunityDiv, status, workingDays, startBuildDate, startDate);
-                                adjustTableRowHeights();
-                            });
-                            
-                            // Append the badge to the button, then append the carpenters input & button to the opportunityDiv
-                            button.appendChild(badge);
-                            opportunityDiv.appendChild(button);
-                            opportunityDiv.appendChild(carpentersInputDiv);
-
+                            cell.appendChild(opportunityDiv);
                             setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
-                            // Append the opportunityDiv to the cell
-                            cells[q].appendChild(opportunityDiv);
-        
-                            // Call the function to update the modal title and body
-                            updateModalContent(button, currentOpportunity);
+                            adjustTableRowHeights();
+		                    attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, previousOpportunity, matchFound);
                         }
+                    });
+
+                    // If no match is found, create a new opportunity
+                    if (!matchFound) {
+                        const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = createOpportunityElement(currentOpportunity, previousData[0], matchFound);
+                        cell.appendChild(opportunityDiv);
+                        setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
+                        adjustTableRowHeights();
+                        attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, null, matchFound);
                     }
+                } else {
+                    // If no previousData exists, create a new opportunity
+                    const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = createOpportunityElement(currentOpportunity);
+                    cell.appendChild(opportunityDiv);
+                    setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
+                    adjustTableRowHeights();
+	                attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, null, matchFound);
                 }
             }
-        }
+        });
     } catch (error) {
         console.error('Error:', error);
         const errorMsgDiv = document.querySelector('#api-error-msg');
         const errorMsg = document.createElement('p');
-        errorMsg.textContent = 'An error occurred while running the displayOpportunities function when attempting to display the workload data: ' + error;
+        errorMsg.textContent =
+            'An error occurred while running the displayOpportunities function when attempting to display the workload data: ' +
+            error;
         errorMsgDiv.appendChild(errorMsg);
     }
+}
+
+/**
+ * Creates an opportunity element with associated UI components and data attributes.
+ *
+ * @param {Object} currentOpportunity - The current opportunity data.
+ * @param {Object|null} [previousOpportunity=null] - The previous opportunity data, if available.
+ * @param {boolean} [matchFound=false] - Indicates whether a matching previous opportunity exists.
+ * @param {number|null} [workingDays=null] - The number of working days for the opportunity (defaults to currentOpportunity.workingDays).
+ * @returns {Object} - An object containing the created elements:
+ *   - {HTMLElement} opportunityDiv - The main div container for the opportunity.
+ *   - {HTMLElement} startBuildDate - The start date element, adjusted based on working days.
+ *   - {HTMLElement} includeWeekends - The checkbox input for including weekends.
+ *   - {Object} carpentersInput - An object containing the carpenter input field and its container.
+ */
+function createOpportunityElement(currentOpportunity, previousOpportunity = null, matchFound = false, workingDays=null) {
+    const {
+        id: currentOpportunityId,
+        opportunityName: currentOpportunityName,
+        statusName: currentStatusName,
+        totalHours: currentTotalHours,
+        startDate,
+        opportunityType
+    } = currentOpportunity;
+    workingDays = workingDays || currentOpportunity.workingDays;
+
+    // Create main opportunity div
+    const opportunityDiv = document.createElement('div');
+    opportunityDiv.id = currentOpportunityId;
+    opportunityDiv.setAttribute('data-hire-type', opportunityType);
+
+    // Create child elements
+    const { weekendDiv: weekendsCheckboxDiv, includeWeekends } = createWeekendCheckbox(currentOpportunityId);
+    const startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
+    const button = createModalButton(currentTotalHours, workingDays);
+    const carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
+
+    let badge;
+
+    if (previousOpportunity) {
+        const {
+            opportunityName: previousOpportunityName,
+            statusName: previousStatusName,
+            totalHours: previousTotalHours
+        } = previousOpportunity;
+
+        const totalHoursDifference = currentTotalHours - previousTotalHours;
+
+        opportunityDiv.innerHTML = matchFound
+            ? setInnerHTML(workingDays, currentOpportunityName, matchFound, previousOpportunityName, currentStatusName, previousStatusName)
+            : setInnerHTML(workingDays, currentOpportunityName, matchFound);
+
+        badge = matchFound
+            ? createModalBadge(matchFound, currentTotalHours, previousTotalHours, totalHoursDifference)
+            : createModalBadge(matchFound, currentTotalHours);
+
+        if (matchFound) {
+            updateModalContent(button, currentOpportunity, previousOpportunity);
+        } else {
+            updateModalContent(button, currentOpportunity);
+        }
+    } else {
+        opportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName);
+        badge = createModalBadge();
+        updateModalContent(button, currentOpportunity);
+    }
+
+    // Assemble elements
+    opportunityDiv.appendChild(weekendsCheckboxDiv);
+    button.appendChild(badge);
+    opportunityDiv.appendChild(carpentersInput.carpentersDiv);
+    opportunityDiv.appendChild(button);
+
+   return { opportunityDiv, startBuildDate, includeWeekends, carpentersInput };
+}
+
+/**
+ * Attaches event listeners to the "Include Weekends" checkbox and the carpenters input field.
+ *
+ * @param {HTMLElement} includeWeekends - The checkbox input element for including weekends.
+ * @param {Object} carpentersInput - An object containing the carpenter input field and its container.
+ * @param {Object} currentOpportunity - The current opportunity data.
+ * @param {HTMLElement} cell - The table cell element where the opportunity is displayed.
+ * @param {Object|null} [previousOpportunity=null] - The previous opportunity data, if available.
+ * @param {boolean} [matchFound=false] - Indicates whether a matching previous opportunity exists.
+ */
+function attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, previousOpportunity = null, matchFound = false) {
+    if (!includeWeekends) {
+        console.error("Error: includeWeekends element not found for", currentOpportunity.id);
+        return;
+    }
+
+    if (!carpentersInput || !carpentersInput.inputField) {
+        console.error("Error: carpentersInputField element not found for", currentOpportunity.id);
+        return;
+    }
+
+    includeWeekends.addEventListener("change", () => {
+        handleInputChange(carpentersInput, currentOpportunity, cell, previousOpportunity, matchFound);
+    });
+
+    carpentersInput.inputField.addEventListener("change", () => {
+        handleInputChange(carpentersInput, currentOpportunity, cell, previousOpportunity, matchFound);
+    });
+}
+
+/**
+ * Handles input changes and updates the opportunity display accordingly.
+ *
+ * @param {Object} carpentersInput - An object containing the carpenter input field and its container.
+ * @param {Object} currentOpportunity - The current opportunity data.
+ * @param {HTMLElement} cell - The table cell element where the opportunity is displayed.
+ * @param {Object|null} [previousOpportunity=null] - The previous opportunity data, if available.
+ * @param {boolean} [matchFound=false] - Indicates whether a matching previous opportunity exists.
+ */
+function handleInputChange(carpentersInput, currentOpportunity, cell, previousOpportunity = null, matchFound = false) {
+    if (!cell) {
+        console.error("Error: cell element not found for startDate:", currentOpportunity.startDate);
+        return;
+    }
+
+    const carpentersInputField = carpentersInput.inputField;
+    if (!carpentersInputField) {
+        console.error("Error: carpentersInputField not found for Opportunity ID:", currentOpportunity.id);
+        return;
+    }
+
+    const { id: currentOpportunityId, totalHours, startDate, status } = currentOpportunity;
+    const workingDays = calculateWorkingDays(totalHours, carpentersInputField.value);
+
+    // Remove any existing opportunity div before appending a new one
+    removeOldDiv(currentOpportunityId);
+
+    // Create new opportunity element
+    const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput: newCarpentersInput } = createOpportunityElement(
+        currentOpportunity, 
+        previousOpportunity, 
+        matchFound, 
+        workingDays
+    );
+
+    // Append, style & attach event listeners
+    cell.appendChild(opportunityDiv);
+    setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
+    adjustTableRowHeights();
+    attachEventListeners(includeWeekends, newCarpentersInput, currentOpportunity, cell, previousOpportunity, matchFound);
+    clickDisplayNone();
 }
 
 /**
@@ -954,6 +838,11 @@ function getOpportunityElementObjects(opportunityData) {
                 // Create the carpenters input field
                 let carpentersInput = createCarpentersInputField(id);
                 let carpentersInputValue = carpentersInput.inputValue;
+                let carpentersInputField = carpentersInput.inputField;
+
+                // Create the include weekends checkbox
+                let weekendsInput = createWeekendCheckbox(id);
+                let includeWeekends = weekendsInput.includeWeekends;
 
                 // Get the total number of hours from the scenic calc array
                 let totalHours = calculateTotalHours(scenicCalcArray);
@@ -979,6 +868,8 @@ function getOpportunityElementObjects(opportunityData) {
                     'status': status,
                     'statusName': statusName,
                     'numberOfCarpenters': carpentersInputValue,
+                    'carpentersInputField': carpentersInputField,
+                    'includeWeekends': includeWeekends,
                     'totalHours': totalHours,
                     'workingDays': workingDays,
                     'scenicCalcArray': scenicCalcArray,
@@ -1227,7 +1118,7 @@ function createCarpentersInputField(id, totalHours=null, button=null) {
 }
 
 /**
- * Function to se the display to none when the user hovers over the element
+ * Function to set the display to none when the user clicks the notification on the element
  */
 function clickDisplayNone() {
     let clickElements = document.querySelectorAll('.click-display-none');
