@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         opportunityData = getOpportunityElementObjects(data);
-        compareOpportunityData(opportunityData, previousOpportunityData);
+        // compareOpportunityData(opportunityData, previousOpportunityData);
         displayOpportunities(opportunityData, previousOpportunityData);
         clickDisplayNone();
         previousOpportunityData = opportunityData;
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
             opportunityData = getOpportunityElementObjects(data);
             // Retrieve the previous opportunity data from local storage
             previousOpportunityData = JSON.parse(localStorage.getItem('previousOpportunityData'));
-            compareOpportunityData(opportunityData, previousOpportunityData);
+            // compareOpportunityData(opportunityData, previousOpportunityData);
             displayOpportunities(opportunityData, previousOpportunityData);
             clickDisplayNone();
             previousOpportunityData = opportunityData;
@@ -172,9 +172,21 @@ function createOpportunityElement(currentOpportunity, previousOpportunity = null
 
     // Create child elements
     const { weekendDiv: weekendsCheckboxDiv, includeWeekends } = createWeekendCheckbox(currentOpportunityId);
-    const startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
+    let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
+    startBuildDate = isDateVisible(startBuildDate);
     const button = createModalButton(currentTotalHours, workingDays);
     const carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
+
+    // Check if the startBuildDate and startDate are in the same month
+    const {spansMultipleMonths, monthDiff} = checkOpportunityDuration(new Date(startBuildDate), new Date(startDate));
+
+    if (spansMultipleMonths) {
+        const previousMonthVisible = getEarliestVisibleDate(startBuildDate);
+        if (previousMonthVisible) {
+            createSiblingOpportunity(currentOpportunity, startBuildDate, monthDiff);
+        }
+        startBuildDate = getEarliestVisibleDate(startDate);
+    }
 
     let badge;
 
@@ -213,6 +225,53 @@ function createOpportunityElement(currentOpportunity, previousOpportunity = null
     opportunityDiv.appendChild(button);
 
    return { opportunityDiv, startBuildDate, includeWeekends, carpentersInput };
+}
+
+/**
+ * Creates a sibling opportunity element in the DOM based on the given opportunity data.
+ * If `monthDiff` is greater than 1, multiple sibling elements are created with unique IDs.
+ * If `monthDiff` is 1, a single sibling opportunity is added to the calendar.
+ *
+ * @param {Object} currentOpportunity - The current opportunity object containing details.
+ * @param {string} startBuildDate - The starting date (YYYY-MM-DD) for the build process.
+ * @param {number} monthDiff - The number of months the sibling opportunities span.
+ *
+ * @returns {void} - This function does not return a value; it modifies the DOM.
+ */
+function createSiblingOpportunity(currentOpportunity, startBuildDate, monthDiff) {
+    const {
+		id: currentOpportunityId,
+		opportunityName: currentOpportunityName,
+		status,
+		startDate,
+		opportunityType,
+		workingDays
+	} = currentOpportunity;
+    const monthEndDate = getLastDayOfMonth(startBuildDate);
+    const cell = document.getElementById(monthEndDate);
+    
+    if (monthDiff > 1) {
+    	for (let i = 1; i <= monthDiff; i++) { // Start from 1 to avoid "id-0"
+        const opportunityDiv = document.createElement("div");
+        opportunityDiv.id = `${currentOpportunityId}-${i}`;
+
+        // Ensure ID uniqueness before adding
+        if (!document.getElementById(opportunityDiv.id)) {
+            console.log(`Created sibling with ID: ${opportunityDiv.id}`);
+        } else {
+            console.warn(`ID ${opportunityDiv.id} already exists!`);
+        }
+    	}
+    } else {
+    	const opportunityDiv = document.createElement("div");
+	    opportunityDiv.id = `${currentOpportunityId}-${monthDiff}`;
+	    opportunityDiv.setAttribute('data-hire-type', opportunityType);
+	    opportunityDiv.innerHTML = setSiblingInnerHTML(startBuildDate, startDate, currentOpportunityName);
+	    cell.appendChild(opportunityDiv);
+        startBuildDate = isDateVisible(startBuildDate);
+	    setDivStyle(opportunityDiv, status, workingDays, startBuildDate, monthEndDate, currentOpportunityId);
+	    // adjustTableRowHeights();
+    }
 }
 
 /**
@@ -269,8 +328,8 @@ function handleInputChange(carpentersInput, currentOpportunity, cell, previousOp
     const { id: currentOpportunityId, totalHours, startDate, status } = currentOpportunity;
     const workingDays = calculateWorkingDays(totalHours, carpentersInputField.value);
 
-    // Remove any existing opportunity div before appending a new one
-    removeOldDiv(currentOpportunityId);
+    // Remove any existing opportunity divs before appending a new one
+    removeOldDivs(currentOpportunityId);
 
     // Create new opportunity element
     const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput: newCarpentersInput } = createOpportunityElement(
@@ -1169,9 +1228,12 @@ function setDivWidth(startBuildDate, dateOut, div) {
  * @param {string} startBuildDate - The start build date
  * @param {string} dateOut - The date out
  */
-function setDivStyle(div, status, workingDays, startBuildDate, dateOut) {
+function setDivStyle(div, status, workingDays, startBuildDate, dateOut, divId=null) {
+    div.classList.add(divId || div.id);
     div.classList.add('opportunity', 'mb-3', 'rounded-corners', 'div-border');
-    // div.style.width = '100%';
+    setDivWidth(startBuildDate, dateOut, div);
+    setRowClass(startBuildDate, dateOut, div);
+
     if (status === 1) {
         div.classList.add('provisional_background');
     } else if (status === 5) {
@@ -1179,13 +1241,9 @@ function setDivStyle(div, status, workingDays, startBuildDate, dateOut) {
     } else {
         div.classList.add('open-background');
     }
-    if (workingDays === 0) {
-        div.style.width = '100%';
-        setRowClass(startBuildDate, dateOut, div);
-    } else {
+
+    if (workingDays > 0) {
         div.classList.add('pe-2', 'text-align-end');
-        setDivWidth(startBuildDate, dateOut, div);
-        setRowClass(startBuildDate, dateOut, div);
     }
 }
 
@@ -1256,8 +1314,7 @@ function setInnerHTML(workingDays=0, currentOpportunityName=null, matchFound=nul
             innerHTML = `<span class="badge rounded-pill truncate ${workingDays > 0 ? 'text-align-end' : ''}">${currentOpportunityName}</span>
             <span class="position-absolute top-0 end-0 p-2 bg-info border border-light rounded-circle click-display-none">
                 <span class="visually-hidden">New alerts</span>
-            </span>`
-
+            </span>`;
         } else {
             innerHTML = `<span class="badge rounded-pill truncate ${workingDays > 0 ? 'text-align-end' : ''}">${currentOpportunityName}</span>`;
         }
@@ -1274,6 +1331,24 @@ function setInnerHTML(workingDays=0, currentOpportunityName=null, matchFound=nul
     }
 
     return innerHTML;
+}
+
+/**
+ * Generates the inner HTML content for a sibling opportunity element.
+ * Displays the opportunity name (if provided), start build date, and date out.
+ *
+ * @param {string} startDate - The start date of the opportunity (YYYY-MM-DD format).
+ * @param {string} dateOut - The date when the opportunity ends or transitions out (YYYY-MM-DD format).
+ * @param {string|null} [currentOpportunityName=null] - The name of the opportunity (optional).
+ *
+ * @returns {string} - A formatted HTML string containing badges for display.
+ */
+function setSiblingInnerHTML(startDate, dateOut, currentOpportunityName=null) {
+	const innerHTML = `<span class="badge rounded-pill truncate">${currentOpportunityName}</span>
+        <span class="badge rounded-pill truncate d-block">Start Build Date: ${startDate}</span>
+		<span class="badge rounded-pill truncate d-block">Date Out: ${dateOut}</span>`;
+
+	return innerHTML;
 }
 
 /**
@@ -1366,11 +1441,11 @@ function createStartBuildDate(workingDays, dateOut, includeWeekends, id) {
  * Function to remove divs from the calendar
  * @param {number} id - The opportunity ID
  */
-function removeOldDiv(id) {
-    let oldDiv = document.getElementById(id);
-    if (oldDiv) {
-        oldDiv.parentNode.removeChild(oldDiv);
-    }
+function removeOldDivs(className) {
+    const oldDivs = document.getElementsByClassName(className);
+
+    // Convert to an array before removing elements
+    Array.from(oldDivs).forEach(div => div.remove());
 }
 
 /**
@@ -1494,4 +1569,57 @@ function getLastDayOfMonth(dateString) {
     const lastDayString = lastDay.toISOString().split('T')[0]; 
     
     return lastDayString;
+}
+
+/**
+ * Finds the earliest visible date within the same row as the given date.
+ * Searches for the first `<td>` element that is not hidden (i.e., does not have the "display-none" class).
+ *
+ * @param {string} dateString - The ID of the target `<td>` element, which represents a date (formatted as "YYYY-MM-DD").
+ *
+ * @returns {string|null} - The ID of the earliest visible `<td>` element in the same row, or `null` if none are found.
+ */
+function getEarliestVisibleDate(dateString) {
+    let targetTd = document.getElementById(dateString);
+    if (!targetTd) {
+        console.error("Could not find the target <td> element");
+        return null;
+    }
+
+    let row = targetTd.closest("tr");
+    if (!row) {
+        console.error("Could not find the parent row");
+        return null;
+    }
+
+    let cells = row.getElementsByClassName("cell-border");
+
+    for (let cell of cells) {
+        if (!cell.classList.contains("display-none")) {
+            return cell.id;
+        }
+    }
+
+    console.warn("No visible <td> elements found");
+    return null;
+}
+
+/**
+ * Checks if a given date (represented by a `<td>` element ID) is visible in the DOM.
+ * If the date is not visible, finds the earliest visible date in the same row.
+ *
+ * @param {string} dateString - The ID of the target `<td>` element, representing a date (formatted as "YYYY-MM-DD").
+ *
+ * @returns {string|null} - The ID of the visible `<td>` element, either the original or the earliest visible one, or `null` if none are visible.
+ */
+function isDateVisible(dateString) {
+    const startCell = document.getElementById(dateString);
+
+    // Check if startCell exists and is visible
+    if (startCell && !startCell.classList.contains("display-none")) {
+        return dateString;
+    } 
+
+    // Otherwise, find the earliest visible date
+    return getEarliestVisibleDate(dateString);
 }
