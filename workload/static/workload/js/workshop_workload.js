@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
         rollingCalendar(91);
         fetchData(91).then(data => {
             opportunityData = getOpportunityElementObjects(data);
+            opportunityData = sortOpportunitiesByStartDate(opportunityData);
             // Retrieve the previous opportunity data from local storage
             previousOpportunityData = JSON.parse(localStorage.getItem('previousOpportunityData'));
             // compareOpportunityData(opportunityData, previousOpportunityData);
