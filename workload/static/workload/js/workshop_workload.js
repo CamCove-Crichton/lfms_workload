@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         opportunityData = getOpportunityElementObjects(data);
+        opportunityData = sortOpportunitiesByStartDate(opportunityData);
         // compareOpportunityData(opportunityData, previousOpportunityData);
         displayOpportunities(opportunityData, previousOpportunityData);
         clickDisplayNone();
@@ -1622,4 +1623,14 @@ function isDateVisible(dateString) {
 
     // Otherwise, find the earliest visible date
     return getEarliestVisibleDate(dateString);
+}
+
+/**
+ * Sorts an array of opportunity objects by their start date in ascending order.
+ *
+ * @param {Array} opportunities - An array of opportunity objects. Each object must contain a `startDate` property as a string in the format 'YYYY-MM-DD'.
+ * @returns {Array} A new array of opportunities sorted from the earliest to the latest start date.
+ */
+function sortOpportunitiesByStartDate(opportunities) {
+    return opportunities.slice().sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 }
