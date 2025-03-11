@@ -1,1 +1,1 @@
-web: gunicorn lfms.wsgi:application
+web: gunicorn --timeout 90 lfms.wsgi:application
