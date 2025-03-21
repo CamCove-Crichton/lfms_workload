@@ -1,6 +1,9 @@
 from decimal import Decimal
 from datetime import timedelta, datetime, timezone
-from .api_calls import get_opportunity_items
+from .api_calls import (
+    get_opportunities,
+    get_products,
+    get_opportunity_items,)
 
 
 def round_to_decimal(value, decimal_places=2):
@@ -113,3 +116,42 @@ def remove_product(active_products, num):
     active_products = [
         product for product in active_products if product['id'] != num]
     return active_products
+
+
+def fetch_workload_data(days=14):
+    """
+    Fetch and process the workshop workload data.
+    This logic is used by both the view and the Celery task.
+    """
+    # Get the opportunities from the API
+    provisional_opportunities = get_opportunities(
+        page=1, per_page=25, state_eq=2, status_eq=1)
+    reserved_opportunities = get_opportunities(
+        page=1, per_page=25, state_eq=2, status_eq=5)
+    confirmed_opportunities = get_opportunities(
+        page=1, per_page=25, state_eq=3, status_eq=0)
+
+    all_active_products = get_products(
+        page=1, per_page=20, filtermode='active', product_group='Scenic Calcs')
+
+    active_products = remove_product(all_active_products, 4597)
+
+    # Create lists to store the opportunities within the specified days
+    opportunities_within_date = []
+
+    # Check the dates of the opportunities and append to the lists
+    date_check(
+        provisional_opportunities, opportunities_within_date, days)
+    date_check(reserved_opportunities, opportunities_within_date, days)
+    date_check(confirmed_opportunities, opportunities_within_date, days)
+
+    # Get the opportunity items for each opportunity
+    opportunities_with_items = get_opps_with_items(
+        opportunities_within_date)
+
+    data = {
+        'opportunities_with_items': opportunities_with_items,
+        'active_products': active_products
+    }
+
+    return data

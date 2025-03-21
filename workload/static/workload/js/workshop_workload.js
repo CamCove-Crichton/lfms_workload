@@ -1,3 +1,4 @@
+let overlay = document.getElementById('loading-overlay');
 let opportunityData;
 let previousOpportunityData = null;  // Variable to store the previous opportunity data
 
@@ -7,9 +8,14 @@ document.addEventListener('DOMContentLoaded', function() {
     rollingCalendar(91);
     // Retrieve the previous opportunity data from local storage
     let storedData = localStorage.getItem('previousOpportunityData');
-    if (storedData && storedData !== "undefined") {
-        previousOpportunityData = JSON.parse(storedData);
-    } else {
+    try {
+        if (storedData && storedData !== "undefined") {
+            previousOpportunityData = JSON.parse(storedData);
+        } else {
+            previousOpportunityData = null;
+        }
+    } catch (error) {
+        console.log('Error parsing stored data:', error);
         previousOpportunityData = null;
     }
     fetchData(91).then(data => {
@@ -49,25 +55,76 @@ document.addEventListener('DOMContentLoaded', function() {
  * @param {number} days - The number of days to fetch the data for
  */
 function fetchData(days) {
-    let overlay = document.getElementById('loading-overlay');
     overlay.style.display = 'flex';
     void overlay.offsetWidth;
     overlay.classList.add('show');
-    return fetch(`/workload/api/workshop_workload/?days=${days}`)
-        .then(response => response.json())
-        .then (data => {
-            overlay.classList.remove('show');
-            setTimeout(() => overlay.style.display = 'none', 500);
-            return data;
+
+    return fetch(`/workload/api/start_workshop_workload_task/?days=${days}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.task_id) {
+                return pollTaskStatus(data.task_id);
+            } else {
+                throw new Error("No task ID returned from server.");
+            }
         })
         .catch(error => {
             console.error('Error:', error);
-            const errorMsgDiv = document.querySelector('#api-error-msg');
-            const errorMsg = document.createElement('p');
-            errorMsg.textContent = 'An error occurred while fetching the workload data: ' + error;
-            errorMsgDiv.appendChild(errorMsg);
+            showError(error);
+            return null;
         });
 }
+
+/**
+ * Polls the status of a background task until it is completed.
+ *
+ * @param {string} taskId - The unique identifier of the task to be tracked.
+ * @returns {Promise<any>} A promise that resolves with the task result upon completion 
+ *                         or rejects if an error occurs.
+ */
+function pollTaskStatus(taskId) {
+    return new Promise((resolve, reject) => {
+        function checkStatus() {
+            fetch(`/workload/api/check_task_status/${taskId}/`)
+                .then(response => {
+                    return response.json();
+                })
+                .then(statusData => {
+                    if (statusData.status === "pending") {
+                        setTimeout(checkStatus, 2000);
+                    } else if (statusData.status === "completed") {
+                        console.log("Task successfully completed");
+                        overlay.classList.remove('show');
+                        setTimeout(() => overlay.style.display = 'none', 500);
+                        resolve(statusData.result);
+                    } else {
+                        reject(new Error("Task failed or unknown status"));
+                    }
+                })
+                .catch(error => reject(error));
+        }
+        checkStatus();
+    });
+}
+
+/**
+ * Displays an error message inside the designated error message container.
+ *
+ * @param {string} error - The error message to display.
+ */
+function showError(error) {
+    const errorMsgDiv = document.querySelector('#api-error-msg');
+    errorMsgDiv.innerHTML = ''; // Clear previous errors
+    const errorMsg = document.createElement('p');
+    errorMsg.textContent = 'An error occurred: ' + error;
+    errorMsgDiv.appendChild(errorMsg);
+}
+
 
 /**
  * Function to display the opportunities in the calendar
@@ -175,7 +232,8 @@ function createOpportunityElement(currentOpportunity, previousOpportunity = null
     // Create child elements
     const { weekendDiv: weekendsCheckboxDiv, includeWeekends } = createWeekendCheckbox(currentOpportunityId);
     let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
-    startBuildDate = isDateVisible(startBuildDate);
+    const originalStartBuildDate = startBuildDate;
+    startBuildDate = isDateVisible(startBuildDate, startDate);
     const button = createModalButton(currentTotalHours, workingDays);
     const carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
 
@@ -183,7 +241,8 @@ function createOpportunityElement(currentOpportunity, previousOpportunity = null
     const {spansMultipleMonths, monthDiff} = checkOpportunityDuration(new Date(startBuildDate), new Date(startDate));
 
     if (spansMultipleMonths) {
-        const previousMonthVisible = getEarliestVisibleDate(startBuildDate);
+        const monthEndDate = getLastDayOfMonth(startBuildDate);
+        const previousMonthVisible = getEarliestVisibleDate(monthEndDate);
         if (previousMonthVisible) {
             createSiblingOpportunity(currentOpportunity, startBuildDate, monthDiff);
         }
@@ -210,14 +269,14 @@ function createOpportunityElement(currentOpportunity, previousOpportunity = null
             : createModalBadge(matchFound, currentTotalHours);
 
         if (matchFound) {
-            updateModalContent(button, currentOpportunity, previousOpportunity);
+            updateModalContent(button, currentOpportunity, originalStartBuildDate, previousOpportunity);
         } else {
-            updateModalContent(button, currentOpportunity);
+            updateModalContent(button, currentOpportunity, originalStartBuildDate);
         }
     } else {
         opportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName);
         badge = createModalBadge();
-        updateModalContent(button, currentOpportunity);
+        updateModalContent(button, currentOpportunity, originalStartBuildDate);
     }
 
     // Assemble elements
@@ -266,11 +325,12 @@ function createSiblingOpportunity(currentOpportunity, startBuildDate, monthDiff)
     	}
     } else {
     	const opportunityDiv = document.createElement("div");
+        opportunityDiv.style.height = "132.38px";
 	    opportunityDiv.id = `${currentOpportunityId}-${monthDiff}`;
 	    opportunityDiv.setAttribute('data-hire-type', opportunityType);
 	    opportunityDiv.innerHTML = setSiblingInnerHTML(startBuildDate, startDate, currentOpportunityName);
 	    cell.appendChild(opportunityDiv);
-        startBuildDate = isDateVisible(startBuildDate);
+        startBuildDate = isDateVisible(startBuildDate, monthEndDate);
 	    setDivStyle(opportunityDiv, status, workingDays, startBuildDate, monthEndDate, currentOpportunityId);
 	    // adjustTableRowHeights();
     }
@@ -552,9 +612,9 @@ function calculateWorkingDays(totalHours, carpentersInput) {
 /**
  * Function to create a div to display the Scenic Calc items and other opportunity details
  * @param {array} calcArray - The scenic calc array containing the item name and quantity in hours
- * @returns {object} - The scenic calc div
+ * @param {string} startBuildDate - The date that the build must start
  */
-function createScenicCalcDiv(opportunityElement) {
+function createScenicCalcDiv(opportunityElement, startBuildDate) {
     // Check that the opportunity element is an object
     if (typeof opportunityElement !== 'object') {
         console.error('Invalid input to createScenicCalcDiv: opportunityElement must be an object');
@@ -605,6 +665,7 @@ function createScenicCalcDiv(opportunityElement) {
         // Add other elements to the modal body
         let clientP = additionalContent('Client', client);
         let dateOutP = additionalContent('Date Out', startDate, startTime);
+        let startBuildDateP = additionalContent('Start Build Date', startBuildDate);
         let statusP = additionalContent('Status', status);
 
         // Get the modal body element
@@ -616,6 +677,7 @@ function createScenicCalcDiv(opportunityElement) {
         // Append the elements to the modal body
         modalBody.appendChild(clientP);
         modalBody.appendChild(dateOutP);
+        modalBody.appendChild(startBuildDateP);
         modalBody.appendChild(statusP);
         modalBody.appendChild(scenicCalcDiv);
         modalBody.appendChild(totalHoursP);
@@ -781,10 +843,12 @@ function rollingCalendar(days) {
 /**
  * Function to get all the buttons with the class 'openModalButton'
  * and add an event listener to each button to update the modal
+ * @param {HTMLButtonElement} button - The HTML button element
  * @param {object} opportunityElementOne - The first opportunity element object
+ * @param {string} startBuildDate - The date that the build must start
  * @param {object} opportunityElementTwo - The second opportunity element object
  */
-function updateModalContent(button, opportunityElementOne, opportunityElementTwo=null) {
+function updateModalContent(button, opportunityElementOne, startBuildDate, opportunityElementTwo=null) {
     let id = opportunityElementOne.id;
     button.addEventListener('click', function() {
         // Get the opportunity name
@@ -798,7 +862,7 @@ function updateModalContent(button, opportunityElementOne, opportunityElementTwo
         modalTitle.classList.add('bold-text');
 
         // Create the scenicCalcDiv and append it to the modal body
-        compareScenicCalcModals(opportunityElementOne, opportunityElementTwo);
+        compareScenicCalcModals(opportunityElementOne, startBuildDate, opportunityElementTwo);
         openOpportunity(id);
     });
 }
@@ -955,10 +1019,10 @@ function getOpportunityElementObjects(opportunityData) {
 /**
  * Function to compare the scenic calc arrays and total hours and working days
  * @param {object} currentOpportunityElement - The most current opportunity element object
+ * @param {string} startBuildDate - The date that the build must start
  * @param {object} previousOpportunityElement - The previous opportunity element object
- * @returns {object} - The scenic calc div
  */
-function compareScenicCalcModals(currentOpportunityElement, previousOpportunityElement) {
+function compareScenicCalcModals(currentOpportunityElement, startBuildDate, previousOpportunityElement) {
     // Assign the scenic calc arrays
     let currentScenicCalcArray = currentOpportunityElement.scenicCalcArray;
     
@@ -1069,6 +1133,8 @@ function compareScenicCalcModals(currentOpportunityElement, previousOpportunityE
             dateOutP = additionalContent('Date Out', currentStartDate, currentStartTime);
         }
 
+        let startBuildDateP = additionalContent('Start Build Date', startBuildDate);
+
         // If the status has changed, update the element styling
         let statusP;
         if (currentStatusName !== previousStatusName) {
@@ -1080,13 +1146,14 @@ function compareScenicCalcModals(currentOpportunityElement, previousOpportunityE
         // Append the elements to the modal body
         modalBody.appendChild(clientP);
         modalBody.appendChild(dateOutP);
+        modalBody.appendChild(startBuildDateP);
         modalBody.appendChild(statusP);
         modalBody.appendChild(scenicCalcDiv);
         modalBody.appendChild(totalHoursP);
 
         clickDisplayNone();
     } else {
-        createScenicCalcDiv(currentOpportunityElement);
+        createScenicCalcDiv(currentOpportunityElement, startBuildDate);
     }
 }
 
@@ -1462,7 +1529,7 @@ function setRowClass(startBuildDate, dateOut, div) {
     let cells = document.getElementsByClassName('cell-border');
 
     // Create the row array
-    let rowArray = ['row-one', 'row-two', 'row-three', 'row-four', 'row-five', 'row-six', 'row-seven', 'row-eight', 'row-nine', 'row-ten'];
+    let rowArray = ['row-one', 'row-two', 'row-three', 'row-four', 'row-five', 'row-six', 'row-seven', 'row-eight', 'row-nine', 'row-ten', 'row-eleven', 'row-twelve', 'row-thirteen', 'row-fourteen', 'row-fifteen', 'row-sixteen', 'row-seventeen', 'row-eighteen', 'row-nineteen', 'row-twenty'];
 
     // Track the assigned classes
     let assignedClasses = new Set();
@@ -1584,7 +1651,7 @@ function getLastDayOfMonth(dateString) {
 function getEarliestVisibleDate(dateString) {
     let targetTd = document.getElementById(dateString);
     if (!targetTd) {
-        console.error("Could not find the target <td> element");
+        console.error("Could not find the target <td> element:", targetTd);
         return null;
     }
 
@@ -1607,14 +1674,15 @@ function getEarliestVisibleDate(dateString) {
 }
 
 /**
- * Checks if a given date (represented by a `<td>` element ID) is visible in the DOM.
+ * Checks if a given date (represented by a '<td>' element ID) is visible in the DOM.
  * If the date is not visible, finds the earliest visible date in the same row.
  *
- * @param {string} dateString - The ID of the target `<td>` element, representing a date (formatted as "YYYY-MM-DD").
+ * @param {string} dateString - The ID of the target '<td>' element, representing a date (formatted as "YYYY-MM-DD").
+ * @param {string} dateStringTwo - The fallback ID of the target '<td>', representing a date (formatted as "YYYY-MM-DD").
  *
- * @returns {string|null} - The ID of the visible `<td>` element, either the original or the earliest visible one, or `null` if none are visible.
+ * @returns {string|null} - The ID of the visible '<td>' element, either the original or the earliest visible one, or 'null' if none are visible.
  */
-function isDateVisible(dateString) {
+function isDateVisible(dateString, dateStringTwo) {
     const startCell = document.getElementById(dateString);
 
     // Check if startCell exists and is visible
@@ -1623,7 +1691,7 @@ function isDateVisible(dateString) {
     } 
 
     // Otherwise, find the earliest visible date
-    return getEarliestVisibleDate(dateString);
+    return getEarliestVisibleDate(dateStringTwo);
 }
 
 /**

@@ -2,15 +2,15 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views import View
 from django.http import JsonResponse, QueryDict
-from .api_calls import (
-    get_opportunities,
-    get_products,)
+from .tasks import fetch_workshop_workload
+from celery.result import AsyncResult
+from .api_calls import get_opportunities
 from .utils import (
     weight_calc,
     date_check,
-    get_opps_with_items,
-    remove_product
+    fetch_workload_data,
 )
+
 
 
 @login_required
@@ -81,44 +81,31 @@ def api_workload(request: QueryDict):
     return JsonResponse(data)
 
 
-def api_workshop_workload(request: QueryDict):
+def api_workshop_workload(request=None):
     """
     A view to expose the workload data to the frontend for
     the workload display for the workshop
     """
+    # Check if 'days' is passed in the request (e.g., as a query parameter)
+    days = int(request.GET.get('days', 14))  # Default to 14 if 'days' isn't in the query params
 
-    # Get the 'days' query parameter, otherwise default to 14
-    days = int(request.GET.get('days', 14))
+    # Call the function from utils.py to fetch the data
+    data = fetch_workload_data(days=days)
 
-    # Get the opportunities from the API
-    provisional_opportunities = get_opportunities(
-        page=1, per_page=25, state_eq=2, status_eq=1)
-    reserved_opportunities = get_opportunities(
-        page=1, per_page=25, state_eq=2, status_eq=5)
-    confirmed_opportunities = get_opportunities(
-        page=1, per_page=25, state_eq=3, status_eq=0)
-
-    all_active_products = get_products(
-        page=1, per_page=20, filtermode='active', product_group='Scenic Calcs')
-
-    active_products = remove_product(all_active_products, 4597)
-
-    # Create lists to store the opportunities within the specified days
-    opportunities_within_date = []
-
-    # Check the dates of the opportunities and append to the lists
-    date_check(
-        provisional_opportunities, opportunities_within_date, days)
-    date_check(reserved_opportunities, opportunities_within_date, days)
-    date_check(confirmed_opportunities, opportunities_within_date, days)
-
-    # Get the opportunity items for each opportunity
-    opportunities_with_items = get_opps_with_items(
-        opportunities_within_date)
-
-    data = {
-        'opportunities_with_items': opportunities_with_items,
-        'active_products': active_products
-    }
-
+    # Return the data as JSON
     return JsonResponse(data)
+
+
+def start_workshop_workload_task(request):
+    """Trigger Celery task and return task ID."""
+    days = int(request.GET.get('days', 14))
+    task = fetch_workshop_workload.delay(days)  # Call Celery task
+    return JsonResponse({"task_id": task.id})
+
+
+def check_task_status(request, task_id):
+    """Check if Celery task is complete and return result."""
+    result = AsyncResult(task_id)
+    if result.ready():
+        return JsonResponse({"status": "completed", "result": result.result})
+    return JsonResponse({"status": "pending"})
