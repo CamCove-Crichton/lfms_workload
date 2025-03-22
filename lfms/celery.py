@@ -9,6 +9,14 @@ app = Celery('lfms')
 
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
+# Add SSL configuration for Redis broker
+app.conf.update(
+    broker_use_ssl={
+        'ssl_cert_reqs': 'CERT_REQUIRED',  # Make the SSL connection secure
+    },
+    broker_connection_retry_on_startup=True,  # Ensure retries on startup
+)
+
 # Auto-discover tasks in all Django apps
 app.autodiscover_tasks()
 
