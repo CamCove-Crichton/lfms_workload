@@ -15,7 +15,7 @@ Django==5.0.8
 django-allauth==0.61.1
 django-celery-results==2.5.1
 django-extensions==3.2.3
-gunicorn==22.0.0
+gunicorn==23.0.0
 idna==3.7
 kombu==5.4.2
 oauthlib==3.2.2
