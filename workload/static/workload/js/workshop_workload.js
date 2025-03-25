@@ -73,10 +73,20 @@ function fetchData(days) {
                 throw new Error("No task ID returned from server.");
             }
         })
+        .then(result => {
+            if (!result) {
+                throw new Error("Received empty result from task.");
+            }
+            return result; // Return the final data
+        })
         .catch(error => {
             console.error('Error:', error);
             showError(error);
             return null;
+        })
+        .finally(() => {
+            overlay.classList.remove('show');
+            setTimeout(() => overlay.style.display = 'none', 500);
         });
 }
 
@@ -91,16 +101,12 @@ function pollTaskStatus(taskId) {
     return new Promise((resolve, reject) => {
         function checkStatus() {
             fetch(`/workload/api/check_task_status/${taskId}/`)
-                .then(response => {
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(statusData => {
                     if (statusData.status === "pending") {
                         setTimeout(checkStatus, 2000);
                     } else if (statusData.status === "completed") {
                         console.log("Task successfully completed");
-                        overlay.classList.remove('show');
-                        setTimeout(() => overlay.style.display = 'none', 500);
                         resolve(statusData.result);
                     } else {
                         reject(new Error("Task failed or unknown status"));
