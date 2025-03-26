@@ -106,7 +106,7 @@ def start_workshop_workload_task(request):
 def check_task_status(request, task_id):
     """Check if Celery task is complete and return result."""
     result = AsyncResult(task_id)
-    if result.ready():
+    if result.successful():
         print(f"Task {task_id} completed with result")
         return JsonResponse({"status": "completed", "result": result.result})
     print(f"Task {task_id} still pending")
