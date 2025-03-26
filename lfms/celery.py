@@ -14,7 +14,7 @@ USE_CELERY_SSL = os.getenv('USE_CELERY_SSL', 'False').lower() == 'true'
 if USE_CELERY_SSL:
     app.conf.update(
         broker_use_ssl={
-            'ssl_cert_reqs': None,  # Adjust based on requirements
+            'ssl_cert_reqs': 'CERT_REQUIRED',  # Adjust based on requirements
         },
         broker_connection_retry_on_startup=True,
     )
