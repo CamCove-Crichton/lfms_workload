@@ -12,9 +12,13 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 USE_CELERY_SSL = os.getenv('USE_CELERY_SSL', 'False').lower() == 'true'
 
 if USE_CELERY_SSL:
+    import ssl
     app.conf.update(
         broker_use_ssl={
-            'ssl_cert_reqs': None,  # Adjust based on requirements
+            'ssl_cert_reqs': ssl.CERT_NONE  # or ssl.CERT_REQUIRED if you have certs
+        },
+        redis_backend_use_ssl={
+            'ssl_cert_reqs': ssl.CERT_NONE
         },
         broker_connection_retry_on_startup=True,
     )
