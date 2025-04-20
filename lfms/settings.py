@@ -128,7 +128,7 @@ X_AUTH_TOKEN = os.getenv('X_AUTH_TOKEN', config(
 
 DATABASES = {
     "default": dj_database_url.config(
-        default=os.getenv("HEROKU_POSTGRESQL_OLIVE_URL"),
+        default=os.getenv("DATABASE_URL"),
         conn_max_age=600,
         ssl_require=True
     )
