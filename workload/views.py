@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views import View
 from django.http import JsonResponse, QueryDict
+import logging
 from .tasks import fetch_workshop_workload
 from celery.result import AsyncResult
 from .api_calls import get_opportunities
@@ -11,7 +12,7 @@ from .utils import (
     fetch_workload_data,
 )
 
-
+logger = logging.getLogger(__name__)
 
 @login_required
 def workload(request):
@@ -98,9 +99,23 @@ def api_workshop_workload(request=None):
 
 def start_workshop_workload_task(request):
     """Trigger Celery task and return task ID."""
-    days = int(request.GET.get('days', 14))
-    task = fetch_workshop_workload.delay(days)  # Call Celery task
-    return JsonResponse({"task_id": task.id})
+    try:
+        days_param = request.GET.get('days', '14')
+        logger.info(f"Received request to start workload task with days={days_param}")
+        
+        days = int(days_param)
+        task = fetch_workshop_workload.delay(days)
+        
+        logger.info(f"Celery task {task.id} triggered successfully with {days} days")
+        return JsonResponse({"task_id": task.id})
+    
+    except ValueError as ve:
+        logger.error(f"Invalid 'days' parameter: {ve}", exc_info=True)
+        return JsonResponse({"error": "Invalid 'days' parameter"}, status=400)
+    
+    except Exception as e:
+        logger.error(f"Unexpected error in start_workshop_workload_task: {e}", exc_info=True)
+        return JsonResponse({"error": "Internal server error"}, status=500)
 
 
 def check_task_status(request, task_id):
