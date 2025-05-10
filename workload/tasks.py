@@ -12,3 +12,9 @@ def fetch_workshop_workload(days):
     
     return data
 
+
+@shared_task
+def test_celery_task():
+    logger.info("✅ Celery task ran successfully.")
+    print("✅ Celery task ran successfully.")
+    return "Task completed"
