@@ -9,3 +9,10 @@ node_modules/
 cloudinary_python.txt
 .env
 db.sqlite3
+heroku_config_backup.txt
+myenv/
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
