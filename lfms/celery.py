@@ -19,10 +19,10 @@ if USE_CELERY_SSL:
     import ssl
     app.conf.update(
         broker_use_ssl={
-            'ssl_cert_reqs': ssl.CERT_REQUIRED  # or ssl.CERT_REQUIRED if you have certs
+            'ssl_cert_reqs': ssl.CERT_NONE  # or ssl.CERT_REQUIRED if you have certs
         },
         redis_backend_use_ssl={
-            'ssl_cert_reqs': ssl.CERT_REQUIRED
+            'ssl_cert_reqs': ssl.CERT_NONE
         },
         broker_connection_retry_on_startup=True,
     )
