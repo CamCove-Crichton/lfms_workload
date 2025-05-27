@@ -1,2 +1,2 @@
-web: gunicorn --timeout 90 lfms.wsgi:application
+web: gunicorn lfms.wsgi:application --timeout 60
 worker: celery -A lfms worker --loglevel=info

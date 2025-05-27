@@ -3,6 +3,8 @@ import os
 from celery import Celery
 
 print("✅ Celery is loading...")
+print(f"🔌 CELERY_BROKER_URL: {os.getenv('REDIS_URL')}")
+print(f"🧾 CELERY_RESULT_BACKEND: {os.getenv('CELERY_RESULT_BACKEND')}")
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lfms.settings')
@@ -17,10 +19,10 @@ if USE_CELERY_SSL:
     import ssl
     app.conf.update(
         broker_use_ssl={
-            'ssl_cert_reqs': ssl.CERT_NONE  # or ssl.CERT_REQUIRED if you have certs
+            'ssl_cert_reqs': ssl.CERT_REQUIRED  # or ssl.CERT_REQUIRED if you have certs
         },
         redis_backend_use_ssl={
-            'ssl_cert_reqs': ssl.CERT_NONE
+            'ssl_cert_reqs': ssl.CERT_REQUIRED
         },
         broker_connection_retry_on_startup=True,
     )

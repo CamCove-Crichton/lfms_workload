@@ -1,3 +1,5 @@
+import os
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views import View
@@ -101,22 +103,28 @@ def start_workshop_workload_task(request):
     """Trigger Celery task and return task ID."""
     try:
         days_param = request.GET.get('days', '14')
-        logger.info(f"Received request to start workload task with days={days_param}")
+        logger.info(f"📩 Received request to start Celery task with days={days_param}")
         
         days = int(days_param)
-        print(f'Days: {days}')
+        print(f'📅 Parsed days: {days}')
         print('Calling fetch_workshop_workload')
+
+        # Log broker and backend config
+        print(f'🔌 Broker: {settings.CELERY_BROKER_URL}')
+        print(f'🧾 Backend: {settings.CELERY_RESULT_BACKEND}')
+
         task = fetch_workshop_workload.delay(days)
+        print(f"🚀 Task triggered: {task.id}")
         
         logger.info(f"Celery task {task.id} triggered successfully with {days} days")
         return JsonResponse({"task_id": task.id})
     
     except ValueError as ve:
-        logger.error(f"Invalid 'days' parameter: {ve}", exc_info=True)
+        logger.error(f"❌ Invalid 'days' parameter: {ve}", exc_info=True)
         return JsonResponse({"error": "Invalid 'days' parameter"}, status=400)
     
     except Exception as e:
-        logger.error(f"Unexpected error in start_workshop_workload_task: {e}", exc_info=True)
+        logger.error(f"🔥 Unexpected error: {e}", exc_info=True)
         return JsonResponse({"error": "Internal server error"}, status=500)
 
 
