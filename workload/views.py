@@ -99,8 +99,11 @@ def api_workshop_workload(request=None):
 
 def start_workshop_workload_task(request):
     """Trigger Celery task and return task ID."""
+    print('Before try block of start_workshop_workload_task function')
     try:
+        print('Inside try block of start_workshop_workload_task function')
         days_param = request.GET.get('days', '14')
+        print(f'Days: ${days_param}')
         logger.info(f"Received request to start workload task with days={days_param}")
         
         days = int(days_param)
