@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 def fetch_workshop_workload(days):
     """Celery task to fetch workload data asynchronously."""
     logger.info(f"Running Celery Task with days={days}")
+    print('Inside fetch_workshop_workload function & calling fetch_workload_data function')
     data = fetch_workload_data(days=days)
     
     return data
