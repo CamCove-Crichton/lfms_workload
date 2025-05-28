@@ -31,12 +31,19 @@ SECRET_KEY = os.getenv(
     'django-insecure-hb_bg=ct=t_si#jt#n7b0+ceiwli=kpg8*v4994=(igws)v^0&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG')
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
+
+if ENVIRONMENT == 'development':
+    DEBUG = True
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
+else:
+    DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
+    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'lfms-workload-1b9b2fad9cea.herokuapp.com').split(',')
 
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['*']
 
 
 # Application definition
