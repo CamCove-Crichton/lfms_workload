@@ -3,9 +3,6 @@ import os
 import ssl
 from celery import Celery
 
-print("✅ Celery is loading...")
-print(f"🔌 CELERY_BROKER_URL: {os.getenv('REDIS_URL')}")
-print(f"🧾 CELERY_RESULT_BACKEND: {os.getenv('CELERY_RESULT_BACKEND')}")
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lfms.settings')

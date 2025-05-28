@@ -106,15 +106,8 @@ def start_workshop_workload_task(request):
         logger.info(f"📩 Received request to start Celery task with days={days_param}")
         
         days = int(days_param)
-        print(f'📅 Parsed days: {days}')
-        print('Calling fetch_workshop_workload')
-
-        # Log broker and backend config
-        print(f'🔌 Broker: {settings.CELERY_BROKER_URL}')
-        print(f'🧾 Backend: {settings.CELERY_RESULT_BACKEND}')
 
         task = fetch_workshop_workload.delay(days)
-        print(f"🚀 Task triggered: {task.id}")
         
         logger.info(f"Celery task {task.id} triggered successfully with {days} days")
         return JsonResponse({"task_id": task.id})
