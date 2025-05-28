@@ -192,7 +192,6 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/London'
-CELERY_TASK_ALWAYS_EAGER = True
 app = Celery('lfms')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
