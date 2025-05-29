@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv(
     'django-insecure-hb_bg=ct=t_si#jt#n7b0+ceiwli=kpg8*v4994=(igws)v^0&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
