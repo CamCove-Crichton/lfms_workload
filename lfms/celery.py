@@ -31,8 +31,3 @@ app.autodiscover_tasks()
 @app.task(bind=True)
 def debug_task(self):
     print('Request: {0!r}'.format(self.request))
-
-
-@app.on_after_configure.connect
-def setup_logging(sender, **kwargs):
-    print("🔌 Celery is starting — SSL:", USE_CELERY_SSL)
