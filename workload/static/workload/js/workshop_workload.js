@@ -244,16 +244,16 @@ function createOpportunityElement(currentOpportunity, previousOpportunity = null
     const carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
 
     // Check if the startBuildDate and startDate are in the same month
-    const {spansMultipleMonths, monthDiff} = checkOpportunityDuration(new Date(startBuildDate), new Date(startDate));
+    // const {spansMultipleMonths, monthDiff} = checkOpportunityDuration(new Date(startBuildDate), new Date(startDate));
 
-    if (spansMultipleMonths) {
-        const monthEndDate = getLastDayOfMonth(startBuildDate);
-        const previousMonthVisible = getEarliestVisibleDate(monthEndDate);
-        if (previousMonthVisible) {
-            createSiblingOpportunity(currentOpportunity, startBuildDate, monthDiff);
-        }
-        startBuildDate = getEarliestVisibleDate(startDate);
-    }
+    // if (spansMultipleMonths) {
+    //     const monthEndDate = getLastDayOfMonth(startBuildDate);
+    //     const previousMonthVisible = getEarliestVisibleDate(monthEndDate);
+    //     if (previousMonthVisible) {
+    //         createSiblingOpportunity(currentOpportunity, startBuildDate, monthDiff);
+    //     }
+    //     startBuildDate = getEarliestVisibleDate(startDate);
+    // }
 
     let badge;
 
@@ -1535,7 +1535,11 @@ function setRowClass(startBuildDate, dateOut, div) {
     let cells = document.getElementsByClassName('cell-border');
 
     // Create the row array
-    let rowArray = ['row-one', 'row-two', 'row-three', 'row-four', 'row-five', 'row-six', 'row-seven', 'row-eight', 'row-nine', 'row-ten', 'row-eleven', 'row-twelve', 'row-thirteen', 'row-fourteen', 'row-fifteen', 'row-sixteen', 'row-seventeen', 'row-eighteen', 'row-nineteen', 'row-twenty'];
+    let rowArray = [
+        'row-one', 'row-two', 'row-three', 'row-four', 'row-five', 'row-six', 'row-seven', 'row-eight', 'row-nine', 'row-ten',
+        'row-eleven', 'row-twelve', 'row-thirteen', 'row-fourteen', 'row-fifteen', 'row-sixteen', 'row-seventeen', 'row-eighteen', 'row-nineteen', 'row-twenty',
+        'row-twenty-one', 'row-twenty-two', 'row-twenty-three', 'row-twenty-four'
+    ];
 
     // Track the assigned classes
     let assignedClasses = new Set();
@@ -1585,8 +1589,10 @@ function setRowClass(startBuildDate, dateOut, div) {
 function adjustTableRowHeights() {
     let rows = document.querySelectorAll('tr');
 
-    rows.forEach(row => {
-        let maxHeight = 0;
+    let maxHeight = 0;
+    const rowHeightArr = [];
+
+    rows.forEach(row => {  
 
         row.querySelectorAll('td').forEach(cell => {
             let divs = cell.querySelectorAll('.opportunity');
@@ -1600,6 +1606,11 @@ function adjustTableRowHeights() {
             })
         })
 
+        rowHeightArr.push(maxHeight);
+    })
+
+    maxHeight = Math.max(...rowHeightArr);
+    rows.forEach(row => {
         row.style.height = `${maxHeight + 6}px`;
     })
 }

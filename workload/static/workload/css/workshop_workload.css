@@ -32,6 +32,14 @@
     vertical-align: top;
 }
 
+.tbody-flex {
+    display: flex;
+}
+
+.tr-display {
+    display: inline-table;
+}
+
 .display-none {
     display: none;
 }
@@ -122,4 +130,20 @@
 
 .row-twenty {
     top: 2617px;
+}
+
+.row-twenty-one {
+    top: 2753px;
+}
+
+.row-twenty-two {
+    top: 2889px;
+}
+
+.row-twenty-three {
+    top: 3025px;
+}
+
+.row-twenty-four {
+    top: 3161px;
 }
