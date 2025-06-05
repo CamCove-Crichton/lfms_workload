@@ -173,7 +173,7 @@ function displayOpportunities(currentData, previousData = null) {
                             cell.appendChild(opportunityDiv);
                             setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
                             adjustTableRowHeights();
-		                    attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, previousOpportunity, matchFound);
+		                    attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, previousOpportunity, matchFound);
                         }
                     });
 
@@ -183,7 +183,7 @@ function displayOpportunities(currentData, previousData = null) {
                         cell.appendChild(opportunityDiv);
                         setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
                         adjustTableRowHeights();
-                        attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, null, matchFound);
+                        attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, null, matchFound);
                     }
                 } else {
                     // If no previousData exists, create a new opportunity
@@ -191,7 +191,7 @@ function displayOpportunities(currentData, previousData = null) {
                     cell.appendChild(opportunityDiv);
                     setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
                     adjustTableRowHeights();
-	                attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, null, matchFound);
+	                attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, null, matchFound);
                 }
             }
         });
@@ -290,6 +290,8 @@ function createOpportunityElement(currentOpportunity, previousOpportunity = null
     button.appendChild(badge);
     opportunityDiv.appendChild(carpentersInput.carpentersDiv);
     opportunityDiv.appendChild(button);
+    const carpPerDay = calculateDailyCarpenters(startBuildDate, startDate, carpentersInput, includeWeekends.checked);
+    addDailyCarpenters(carpPerDay);
 
    return { opportunityDiv, startBuildDate, includeWeekends, carpentersInput };
 }
@@ -349,10 +351,12 @@ function createSiblingOpportunity(currentOpportunity, startBuildDate, monthDiff)
  * @param {Object} carpentersInput - An object containing the carpenter input field and its container.
  * @param {Object} currentOpportunity - The current opportunity data.
  * @param {HTMLElement} cell - The table cell element where the opportunity is displayed.
+ * @param {string} startBuildDate - The start date of the build for calculating daily carpenters - 'YYYY-MM-DD'.
+ * @param {string} startDate - The overall project start date used in carpenter calculations - 'YYYY-MM-DD'.
  * @param {Object|null} [previousOpportunity=null] - The previous opportunity data, if available.
  * @param {boolean} [matchFound=false] - Indicates whether a matching previous opportunity exists.
  */
-function attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, previousOpportunity = null, matchFound = false) {
+function attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, previousOpportunity = null, matchFound = false) {
     if (!includeWeekends) {
         console.error("Error: includeWeekends element not found for", currentOpportunity.id);
         return;
@@ -362,12 +366,17 @@ function attachEventListeners(includeWeekends, carpentersInput, currentOpportuni
         console.error("Error: carpentersInputField element not found for", currentOpportunity.id);
         return;
     }
+    
+    let carpPerDay = calculateDailyCarpenters(startBuildDate, startDate, carpentersInput, includeWeekends.checked);
 
     includeWeekends.addEventListener("change", () => {
+        removeDailyCarpenters(carpPerDay);
         handleInputChange(carpentersInput, currentOpportunity, cell, previousOpportunity, matchFound);
     });
 
     carpentersInput.inputField.addEventListener("change", () => {
+        carpPerDay = calculateDailyCarpenters(startBuildDate, startDate, carpentersInput, includeWeekends.checked);
+        removeDailyCarpenters(carpPerDay);
         handleInputChange(carpentersInput, currentOpportunity, cell, previousOpportunity, matchFound);
     });
 }
@@ -411,7 +420,7 @@ function handleInputChange(carpentersInput, currentOpportunity, cell, previousOp
     cell.appendChild(opportunityDiv);
     setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
     adjustTableRowHeights();
-    attachEventListeners(includeWeekends, newCarpentersInput, currentOpportunity, cell, previousOpportunity, matchFound);
+    attachEventListeners(includeWeekends, newCarpentersInput, currentOpportunity, cell, startBuildDate, startDate, previousOpportunity, matchFound);
     clickDisplayNone();
 }
 
@@ -838,12 +847,29 @@ function rollingCalendar(days) {
                 let dayNum = date.getDate();
                 let monthShort = date.toLocaleString('default', {month: 'short'});
                 let weekday = date.toLocaleString('default', {weekday: 'short'});
-                cells[day].innerHTML = `<p class="mb-1">${weekday} ${dayNum} ${monthShort}</p>`;
+                cells[day].innerHTML = `<p class="mb-1 date">${weekday} ${dayNum} ${monthShort}</p>`;
                 cells[day].classList.add('position-relative');
                 cells[day].classList.remove('display-none');
+
+                const carpDiv = createDailyCarpentersDiv(cells[day].id);
+                cells[day].appendChild(carpDiv);
             }
         }
     }
+}
+
+/**
+ * Creates a new <div> element representing the daily required carpenters for a specific item.
+ *
+ * @param {string|number} id - A unique identifier used to set the `id` attribute of the created <div>.
+ * @returns {HTMLDivElement} A <div> element with:
+ *   - Inner HTML containing a paragraph with the text "Req. Carpenters: 0"
+ *   - A <span> element with the `id` in the format `dailyCarp-{id}` for dynamically updating the number
+ */
+function createDailyCarpentersDiv(id) {
+    const dailyCarpDiv = document.createElement('div');
+    dailyCarpDiv.innerHTML = `<p>Req. Carpenters: <span id="dailyCarp-${id}">0</span></p>`
+    return dailyCarpDiv;
 }
 
 /**
@@ -1719,4 +1745,112 @@ function isDateVisible(dateString, dateStringTwo) {
  */
 function sortOpportunitiesByStartDate(opportunities) {
     return opportunities.slice().sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+}
+
+/**
+ * Calculates the distribution of carpenters across working days within a given date range.
+ *
+ * Iterates over table cells with date-based IDs and collects those that fall between 
+ * the start and end dates. Optionally excludes weekends from the list of working days.
+ * Returns an array of objects with each date and the associated carpenters data.
+ *
+ * @param {string|Date} startBuildDate - The start date of the build period.
+ * @param {string|Date} dateOut - The end date (exclusive) for the build period.
+ * @param {Object} carpenters - The carpenter data to associate with each working day.
+ * @param {boolean} [includeWeekends=false] - Whether to include weekends as working days.
+ * @returns {Array<Object>} An array of objects, each containing a date and the carpenters data.
+ */
+function calculateDailyCarpenters(startBuildDate, dateOut, carpenters, includeWeekends=false) {
+    const startDate = new Date(startBuildDate);
+    const endDate = new Date(dateOut);
+    const cells = document.getElementsByClassName('cell-border');
+    const workingDays = [];
+
+    for (const cell of cells) {
+        const cellDate = new Date(cell.id);
+        if (cellDate >= startDate && cellDate < endDate) {
+            const cellDateStr = cell.id
+            const day = cellDate.getDay();
+            const isWeekend = day === 0 || day === 6;
+
+            if (!includeWeekends && isWeekend) {
+                    continue;
+            } 
+            
+            workingDays.push(cellDateStr);
+        }
+    }
+
+    const carpentersPerDay = workingDays.map(date => ({
+        date,
+        carpenters
+    }));
+
+    return carpentersPerDay;
+}
+
+/**
+ * Adds the specified number of carpenters to each corresponding day's cell in the UI.
+ *
+ * Iterates through table cells and matches them with the provided list of carpenter data 
+ * by date. If a match is found, the function updates the displayed number of daily 
+ * carpenters by incrementing the existing value.
+ *
+ * @param {Array<Object>} carpentersPerDay - An array of objects, each containing:
+ *   - {string} date: The date corresponding to a table cell (cell ID).
+ *   - {Object} carpenters: An object with at least an 'inputValue' property representing the number of carpenters to add.
+ */
+function addDailyCarpenters(carpentersPerDay) {
+    const cells = document.getElementsByClassName('cell-border');
+    
+    if (carpentersPerDay.length === 0 ) return;
+
+    for (const cell of cells) {
+        for (const carpPerDay of carpentersPerDay) {
+            if (cell.id === carpPerDay['date']) {
+                const carpObj = carpPerDay['carpenters'];
+                const carpNum = parseInt(carpObj['inputValue']);
+
+                const carpElem = document.getElementById(`dailyCarp-${cell.id}`);
+                if (!carpElem) continue;
+
+                const carpElemNum = parseInt(carpElem.innerText) || 0;
+                carpElem.innerText = carpElemNum + carpNum;
+            }
+        }
+        
+    }
+}
+
+/**
+ * Subtracts the specified number of carpenters from each corresponding day's cell in the UI.
+ *
+ * Iterates through table cells and matches them with the provided list of carpenter data 
+ * by date. If a match is found, the function updates the displayed number of daily 
+ * carpenters by decrementing the existing value.
+ *
+ * @param {Array<Object>} carpentersPerDay - An array of objects, each containing:
+ *   - {string} date: The date corresponding to a table cell (cell ID).
+ *   - {Object} carpenters: An object with at least an 'inputValue' property representing the number of carpenters to remove.
+ */
+function removeDailyCarpenters(carpentersPerDay) {
+    const cells = document.getElementsByClassName('cell-border');
+    
+    if (carpentersPerDay.length === 0 ) return;
+
+    for (const cell of cells) {
+        for (const carpPerDay of carpentersPerDay) {
+            if (cell.id === carpPerDay['date']) {
+                const carpObj = carpPerDay['carpenters'];
+                const carpNum = parseInt(carpObj['inputValue']);
+
+                const carpElem = document.getElementById(`dailyCarp-${cell.id}`);
+                if (!carpElem) continue;
+
+                const carpElemNum = parseInt(carpElem.innerText) || 0;
+                carpElem.innerText = carpElemNum - carpNum;
+            }
+        }
+        
+    }
 }
