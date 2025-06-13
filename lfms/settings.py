@@ -192,10 +192,9 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/London'
-# CELERY_IMPORTS = ("workload.tasks",)
-# app = Celery('lfms')
-# app.config_from_object('django.conf:settings', namespace='CELERY')
-# app.autodiscover_tasks()
+CELERY_TASK_TRACK_STARTED = True
+CELERY_IGNORE_RESULT = False
+CELERY_TASK_IGNORE_RESULT = False
 
 
 # Default primary key field type

@@ -11,6 +11,8 @@ app = Celery('lfms')
 
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
+print(f"Using result backend: {app.conf.result_backend}")
+
 USE_CELERY_SSL = os.getenv('USE_CELERY_SSL', 'False').lower() == 'true'
 
 if USE_CELERY_SSL:
