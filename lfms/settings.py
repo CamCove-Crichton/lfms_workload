@@ -50,10 +50,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_extensions",
     "django_celery_results",
+    "django_celery_beat",
     "allauth",
     "allauth.account",
     "home",
-    "workload",
+    "workload.apps.WorkloadConfig",
     "project_management",
 ]
 
@@ -195,6 +196,7 @@ CELERY_TIMEZONE = 'Europe/London'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_IGNORE_RESULT = False
 CELERY_TASK_IGNORE_RESULT = False
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 
 # Default primary key field type

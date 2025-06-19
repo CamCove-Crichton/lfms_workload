@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Error parsing stored data:', error);
         previousOpportunityData = null;
     }
-    fetchData(91).then(data => {
+    fetchData().then(data => {
         if (!data) {
             console.error('fetchData returned no data');
             return;
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     setInterval( () => {
         rollingCalendar(91);
-        fetchData(91).then(data => {
+        fetchData().then(data => {
             opportunityData = getOpportunityElementObjects(data);
             opportunityData = sortOpportunitiesByStartDate(opportunityData);
             // Retrieve the previous opportunity data from local storage
@@ -54,12 +54,12 @@ document.addEventListener('DOMContentLoaded', function() {
  * @returns {Promise} - The data from the API
  * @param {number} days - The number of days to fetch the data for
  */
-function fetchData(days) {
+function fetchData() {
     overlay.style.display = 'flex';
     void overlay.offsetWidth;
     overlay.classList.add('show');
 
-    return fetch(`/workload/api/start_workshop_workload_task/?days=${days}`)
+    return fetch(`/workload/get_workshop_workload_data/`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -67,17 +67,10 @@ function fetchData(days) {
             return response.json();
         })
         .then(data => {
-            if (data.task_id) {
-                return pollTaskStatus(data.task_id);
-            } else {
-                throw new Error("No task ID returned from server.");
+            if (!data.result) {
+                throw new Error("No result returned from server.");
             }
-        })
-        .then(result => {
-            if (!result) {
-                throw new Error("Received empty result from task.");
-            }
-            return result; // Return the final data
+            return data.result;
         })
         .catch(error => {
             console.error('Error:', error);
@@ -97,26 +90,26 @@ function fetchData(days) {
  * @returns {Promise<any>} A promise that resolves with the task result upon completion 
  *                         or rejects if an error occurs.
  */
-function pollTaskStatus(taskId) {
-    return new Promise((resolve, reject) => {
-        function checkStatus() {
-            fetch(`/workload/api/check_task_status/${taskId}/`)
-                .then(response => response.json())
-                .then(statusData => {
-                    if (statusData.status === "pending") {
-                        setTimeout(checkStatus, 2000);
-                    } else if (statusData.status === "completed") {
-                        console.log("Task successfully completed");
-                        resolve(statusData.result);
-                    } else {
-                        reject(new Error("Task failed or unknown status"));
-                    }
-                })
-                .catch(error => reject(error));
-        }
-        checkStatus();
-    });
-}
+// function pollTaskStatus(taskId) {
+//     return new Promise((resolve, reject) => {
+//         function checkStatus() {
+//             fetch(`/workload/api/check_task_status/${taskId}/`)
+//                 .then(response => response.json())
+//                 .then(statusData => {
+//                     if (statusData.status === "pending") {
+//                         setTimeout(checkStatus, 2000);
+//                     } else if (statusData.status === "completed") {
+//                         console.log("Task successfully completed");
+//                         resolve(statusData.result);
+//                     } else {
+//                         reject(new Error("Task failed or unknown status"));
+//                     }
+//                 })
+//                 .catch(error => reject(error));
+//         }
+//         checkStatus();
+//     });
+// }
 
 /**
  * Displays an error message inside the designated error message container.

@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views import View
 from django.http import JsonResponse, QueryDict
+from django_celery_results.models import TaskResult
+import json
 import logging
 from .tasks import fetch_workshop_workload
 from celery.result import AsyncResult
@@ -84,48 +86,63 @@ def api_workload(request: QueryDict):
     return JsonResponse(data)
 
 
-def api_workshop_workload(request=None):
-    """
-    A view to expose the workload data to the frontend for
-    the workload display for the workshop
-    """
-    # Check if 'days' is passed in the request (e.g., as a query parameter)
-    days = int(request.GET.get('days', 14))  # Default to 14 if 'days' isn't in the query params
+# def api_workshop_workload(request=None):
+#     """
+#     A view to expose the workload data to the frontend for
+#     the workload display for the workshop
+#     """
+#     # Check if 'days' is passed in the request (e.g., as a query parameter)
+#     days = int(request.GET.get('days', 14))  # Default to 14 if 'days' isn't in the query params
 
-    # Call the function from utils.py to fetch the data
-    data = fetch_workload_data(days=days)
+#     # Call the function from utils.py to fetch the data
+#     data = fetch_workload_data(days=days)
 
-    # Return the data as JSON
-    return JsonResponse(data)
+#     # Return the data as JSON
+#     return JsonResponse(data)
 
 
-def start_workshop_workload_task(request):
-    """Trigger Celery task and return task ID."""
+def get_workshop_workload_data(request):
+    """A view to get the latest workload result from the database"""
+    latest_result = TaskResult.objects.all().order_by('-date_done').first()
+
+    if not latest_result or not latest_result.result:
+        return JsonResponse({'error': 'No result found'}, status=404)
+    
     try:
-        days_param = request.GET.get('days', '14')
-        logger.info(f"📩 Received request to start Celery task with days={days_param}")
+        data = json.loads(latest_result.result)
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Invalid result format'}, status=500)
+
+    return JsonResponse({'result': data})
+
+
+# def start_workshop_workload_task(request):
+#     """Trigger Celery task and return task ID."""
+#     try:
+#         days_param = request.GET.get('days', '14')
+#         logger.info(f"📩 Received request to start Celery task with days={days_param}")
         
-        days = int(days_param)
+#         days = int(days_param)
 
-        task = fetch_workshop_workload.delay(days)
+#         task = fetch_workshop_workload.delay(days)
         
-        logger.info(f"Celery task {task.id} triggered successfully with {days} days")
-        return JsonResponse({"task_id": task.id})
+#         logger.info(f"Celery task {task.id} triggered successfully with {days} days")
+#         return JsonResponse({"task_id": task.id})
     
-    except ValueError as ve:
-        logger.error(f"❌ Invalid 'days' parameter: {ve}", exc_info=True)
-        return JsonResponse({"error": "Invalid 'days' parameter"}, status=400)
+#     except ValueError as ve:
+#         logger.error(f"❌ Invalid 'days' parameter: {ve}", exc_info=True)
+#         return JsonResponse({"error": "Invalid 'days' parameter"}, status=400)
     
-    except Exception as e:
-        logger.error(f"🔥 Unexpected error: {e}", exc_info=True)
-        return JsonResponse({"error": "Internal server error"}, status=500)
+#     except Exception as e:
+#         logger.error(f"🔥 Unexpected error: {e}", exc_info=True)
+#         return JsonResponse({"error": "Internal server error"}, status=500)
 
 
-def check_task_status(request, task_id):
-    """Check if Celery task is complete and return result."""
-    result = AsyncResult(task_id)
-    if result.ready():
-        print(f"Task {task_id} completed with result")
-        return JsonResponse({"status": "completed", "result": result.result})
-    print(f"Task {task_id} still pending")
-    return JsonResponse({"status": "pending"})
+# def check_task_status(request, task_id):
+#     """Check if Celery task is complete and return result."""
+#     result = AsyncResult(task_id)
+#     if result.ready():
+#         print(f"Task {task_id} completed with result")
+#         return JsonResponse({"status": "completed", "result": result.result})
+#     print(f"Task {task_id} still pending")
+#     return JsonResponse({"status": "pending"})
