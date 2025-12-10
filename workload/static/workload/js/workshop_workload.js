@@ -1,50 +1,57 @@
 let overlay = document.getElementById('loading-overlay');
 let opportunityData;
 let previousOpportunityData = null;  // Variable to store the previous opportunity data
+let oppIds;
+let previousOppIds = null;
 
 // Ensure the DOM is fully loaded before running the script
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded and parsed');
     rollingCalendar(91);
-    // Retrieve the previous opportunity data from local storage
-    let storedData = localStorage.getItem('previousOpportunityData');
+    // Retrieve the previous opportunity ids from local storage
+    let storedData = localStorage.getItem('previousOppIds');
     try {
         if (storedData && storedData !== "undefined") {
-            previousOpportunityData = JSON.parse(storedData);
+            previousOppIds = JSON.parse(storedData);
         } else {
-            previousOpportunityData = null;
+            previousOppIds = null;
         }
     } catch (error) {
         console.log('Error parsing stored data:', error);
-        previousOpportunityData = null;
+        previousOppIds = null;
     }
     fetchData().then(data => {
         if (!data) {
             console.error('fetchData returned no data');
             return;
         }
-        opportunityData = getOpportunityElementObjects(data);
+        console.log(data);
+        opportunityData = getScenicTagOpportunities(data);
         opportunityData = sortOpportunitiesByStartDate(opportunityData);
+        console.log(opportunityData);
+        previousOpportunityData = createPreviousOpportunityObjects(opportunityData);
+        console.log(previousOpportunityData);
+        oppIds = getOppIds(opportunityData);
         // compareOpportunityData(opportunityData, previousOpportunityData);
-        displayOpportunities(opportunityData, previousOpportunityData);
+        displayOpportunities(opportunityData, previousOpportunityData, previousOppIds);
         clickDisplayNone();
-        previousOpportunityData = opportunityData;
+        previousOppIds = oppIds;
         // Store the previous opportunity data in local storage
-        localStorage.setItem('previousOpportunityData', JSON.stringify(previousOpportunityData));
+        localStorage.setItem('previousOppIds', JSON.stringify(previousOppIds));
     });
     setInterval( () => {
         rollingCalendar(91);
         fetchData().then(data => {
-            opportunityData = getOpportunityElementObjects(data);
+            opportunityData = getScenicTagOpportunities(data);
             opportunityData = sortOpportunitiesByStartDate(opportunityData);
-            // Retrieve the previous opportunity data from local storage
-            previousOpportunityData = JSON.parse(localStorage.getItem('previousOpportunityData'));
+            previousOpportunityData = createPreviousOpportunityObjects(opportunityData);
+            oppIds = getOppIds(opportunityData);
             // compareOpportunityData(opportunityData, previousOpportunityData);
-            displayOpportunities(opportunityData, previousOpportunityData);
+            displayOpportunities(opportunityData, previousOpportunityData, previousOppIds);
             clickDisplayNone();
-            previousOpportunityData = opportunityData;
+            previousOppIds = oppIds;
             // Update the previous opportunity data in local storage
-            localStorage.setItem('previousOpportunityData', JSON.stringify(previousOpportunityData));
+            localStorage.setItem('previousOppIds', JSON.stringify(previousOppIds));
         });
     }, 2 * 60 * 60 * 1000);
 });
@@ -130,7 +137,7 @@ function showError(error) {
  * @param {object} currentData - The current opportunity data
  * @param {object} previousData - The previous opportunity data
  */
-function displayOpportunities(currentData, previousData = null) {
+async function displayOpportunities(currentData, previousData = null, previousOppIds = null) {
     // Check for invalid input
     if (!currentData || !Array.isArray(currentData)) {
         console.error('Invalid input to displayOpportunities: currentData must be an array');
@@ -138,56 +145,76 @@ function displayOpportunities(currentData, previousData = null) {
     }
 
     try {
-        currentData.forEach(currentOpportunity => {
+        for (const currentOpportunity of currentData) {
             let matchFound = false;
-
             const {
-                id: currentOpportunityId,
-                startDate,
+                opportunity_id: currentOpportunityId,
+                custom_input: {date_out: startDate} = {},
                 status,
-                workingDays
+                custom_input: {working_days: workingDays} = {},
+                totals: { grand_total: totalHours } = {},
+                custom_input: { planned_finish_date: plannedFinish } ={}
             } = currentOpportunity;
 
-            let cell = document.getElementById(startDate);
+            const cell = plannedFinish ? document.getElementById(plannedFinish) : document.getElementById(startDate);
 
-            if (cell && status !== 20) {
-                if (previousData) {
-                    previousData.forEach(previousOpportunity => {
-                        const { id: previousOpportunityId } = previousOpportunity;
+            if (cell && status !== 20 && totalHours > 0) {
+                if (previousOppIds) {
+                    // console.log('Previous Data exists!');
+                    const previousOpportunity = previousData.find(
+                        (p) => p.opportunity_id === currentOpportunityId
+                    );
 
-                        if (currentOpportunityId === previousOpportunityId) {
-                            matchFound = true;
-                            const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = createOpportunityElement(
-                                currentOpportunity, 
-                                previousOpportunity, 
-                                matchFound
-                            );
+                    matchFound = Boolean(previousOpportunity);
+                    const unrelatedPrevious = previousData[0];
 
-                            cell.appendChild(opportunityDiv);
-                            setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
-                            adjustTableRowHeights();
-		                    attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, previousOpportunity, matchFound);
-                        }
-                    });
+                    if (matchFound) {
+                        // console.log(`MATCH: Current ID ${currentOpportunityId} existed previously`);
+                        const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = await createOpportunityElement(
+                            currentOpportunity, 
+                            previousOpportunity, 
+                            matchFound
+                        );
 
-                    // If no match is found, create a new opportunity
-                    if (!matchFound) {
-                        const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = createOpportunityElement(currentOpportunity, previousData[0], matchFound);
                         cell.appendChild(opportunityDiv);
-                        setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
+                        if (plannedFinish) {
+                            setDivStyle(opportunityDiv, status, workingDays, startBuildDate, plannedFinish);
+                            attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, plannedFinish, previousOpportunity, matchFound, true);
+                        } else {
+                            setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
+                            attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, previousOpportunity, matchFound);
+                        }
                         adjustTableRowHeights();
-                        attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, null, matchFound);
+                    } else {
+                        // console.log(`NO MATCH: Current ID ${currentOpportunityId} is new`);
+                        const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = await createOpportunityElement(currentOpportunity, unrelatedPrevious, matchFound);
+                        cell.appendChild(opportunityDiv);
+                        if (plannedFinish) {
+                            setDivStyle(opportunityDiv, status, workingDays, startBuildDate, plannedFinish);
+                            attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, plannedFinish, null, matchFound, true);
+                        } else {
+                            setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
+                            attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, null, matchFound);
+                        }
+                        adjustTableRowHeights();
                     }
                 } else {
+                    // console.log('No previous data exists!');
                     // If no previousData exists, create a new opportunity
-                    const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = createOpportunityElement(currentOpportunity);
+                    const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = await createOpportunityElement(currentOpportunity);
+                    // console.log(opportunityDiv);
                     cell.appendChild(opportunityDiv);
-                    setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
+                    if (plannedFinish) {
+                        setDivStyle(opportunityDiv, status, workingDays, startBuildDate, plannedFinish);
+	                    attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, plannedFinish, null, matchFound, true);
+                    } else {
+                        setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
+                        attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, null, matchFound);
+                    }
                     adjustTableRowHeights();
-	                attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, null, matchFound);
                 }
             }
-        });
+        };
     } catch (error) {
         console.error('Error:', error);
         const errorMsgDiv = document.querySelector('#api-error-msg');
@@ -205,36 +232,53 @@ function displayOpportunities(currentData, previousData = null) {
  * @param {Object} currentOpportunity - The current opportunity data.
  * @param {Object|null} [previousOpportunity=null] - The previous opportunity data, if available.
  * @param {boolean} [matchFound=false] - Indicates whether a matching previous opportunity exists.
- * @param {number|null} [workingDays=null] - The number of working days for the opportunity (defaults to currentOpportunity.workingDays).
  * @returns {Object} - An object containing the created elements:
  *   - {HTMLElement} opportunityDiv - The main div container for the opportunity.
  *   - {HTMLElement} startBuildDate - The start date element, adjusted based on working days.
  *   - {HTMLElement} includeWeekends - The checkbox input for including weekends.
  *   - {Object} carpentersInput - An object containing the carpenter input field and its container.
  */
-function createOpportunityElement(currentOpportunity, previousOpportunity = null, matchFound = false, workingDays=null) {
+async function createOpportunityElement(currentOpportunity, previousOpportunity = null, matchFound = false, exists=false) {
     const {
-        id: currentOpportunityId,
-        opportunityName: currentOpportunityName,
-        statusName: currentStatusName,
-        totalHours: currentTotalHours,
-        startDate,
-        opportunityType
+        opportunity_id: currentOpportunityId,
+        name: currentOpportunityName,
+        status_name: currentStatusName,
+        totals: { grand_total: currentTotalHours } = {},
+        custom_input: { planned_finish_date: plannedFinish } = {},
+        custom_input: { date_out: startDate } = {},
+        custom_input: { start_build_date: buildDate } = {}
     } = currentOpportunity;
-    workingDays = workingDays || currentOpportunity.workingDays;
+    const opportunityType = setOpportunityType(currentOpportunity);
 
     // Create main opportunity div
     const opportunityDiv = document.createElement('div');
     opportunityDiv.id = currentOpportunityId;
     opportunityDiv.setAttribute('data-hire-type', opportunityType);
 
+    // Fetch latest Custom Input data if opportunity already exists
+    let customInputData = null;
+    if (exists) {
+        try{
+            const response = await fetch(`/workload/opportunities/${currentOpportunityId}/custom_input/`);
+            if (response.ok) {
+                customInputData = await response.json();
+            } else {
+                console.error(`Failed to fetch custom input data for opportunity ${currentOpportunityId}`);
+            }
+        } catch (err) {
+            console.error(`Error fetching custom input data for opportunity ${currentOpportunityId}:`, err);
+        }
+    }
+
+    const workingDays = exists ? customInputData.working_days : currentOpportunity.custom_input["working_days"];
+
     // Create child elements
-    const { weekendDiv: weekendsCheckboxDiv, includeWeekends } = createWeekendCheckbox(currentOpportunityId);
-    let startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends.checked, currentOpportunityId);
+    const { weekendDiv: weekendsCheckboxDiv, includeWeekends } = exists === false ? await createWeekendCheckbox(currentOpportunity) : await createWeekendCheckbox(currentOpportunity, customInputData);
+    let startBuildDate = exists ? customInputData.start_build_date : buildDate;
     const originalStartBuildDate = startBuildDate;
-    startBuildDate = isDateVisible(startBuildDate, startDate);
+    startBuildDate = plannedFinish ? isDateVisible(startBuildDate, plannedFinish) : isDateVisible(startBuildDate, startDate);
     const button = createModalButton(currentTotalHours, workingDays);
-    const carpentersInput = createCarpentersInputField(currentOpportunityId, currentTotalHours, button);
+    const carpentersInput = exists === false ? await createCarpentersInputField(currentOpportunity, currentTotalHours, button) : await createCarpentersInputField(currentOpportunity, currentTotalHours, button, customInputData);
 
     // Check if the startBuildDate and startDate are in the same month
     // const {spansMultipleMonths, monthDiff} = checkOpportunityDuration(new Date(startBuildDate), new Date(startDate));
@@ -252,13 +296,20 @@ function createOpportunityElement(currentOpportunity, previousOpportunity = null
 
     if (previousOpportunity) {
         const {
-            opportunityName: previousOpportunityName,
-            statusName: previousStatusName,
-            totalHours: previousTotalHours
+            name: previousOpportunityName,
+            status_name: previousStatusName,
+            totals: { grand_total: previousTotalHours } = {}
         } = previousOpportunity;
 
         const totalHoursDifference = currentTotalHours - previousTotalHours;
 
+        if (currentOpportunityId === 19879) {
+            console.log(matchFound);
+            console.log(`Current Opportunity Name: ${currentOpportunityName}`);
+            console.log(`Current Status Name: ${currentStatusName}`);
+            console.log(`Previous Opportunity Name: ${previousOpportunityName}`);
+            console.log(`Previous Status Name: ${previousStatusName}`);
+        }
         opportunityDiv.innerHTML = matchFound
             ? setInnerHTML(workingDays, currentOpportunityName, matchFound, previousOpportunityName, currentStatusName, previousStatusName)
             : setInnerHTML(workingDays, currentOpportunityName, matchFound);
@@ -283,10 +334,10 @@ function createOpportunityElement(currentOpportunity, previousOpportunity = null
     button.appendChild(badge);
     opportunityDiv.appendChild(carpentersInput.carpentersDiv);
     opportunityDiv.appendChild(button);
-    const carpPerDay = calculateDailyCarpenters(startBuildDate, startDate, carpentersInput, includeWeekends.checked);
+    const carpPerDay = plannedFinish ? calculateDailyCarpenters(startBuildDate, plannedFinish, carpentersInput, includeWeekends.checked, true) : calculateDailyCarpenters(startBuildDate, startDate, carpentersInput, includeWeekends.checked);
     addDailyCarpenters(carpPerDay);
 
-   return { opportunityDiv, startBuildDate, includeWeekends, carpentersInput };
+   return { opportunityDiv, startBuildDate, includeWeekends, carpentersInput, workingDays };
 }
 
 /**
@@ -300,42 +351,42 @@ function createOpportunityElement(currentOpportunity, previousOpportunity = null
  *
  * @returns {void} - This function does not return a value; it modifies the DOM.
  */
-function createSiblingOpportunity(currentOpportunity, startBuildDate, monthDiff) {
-    const {
-		id: currentOpportunityId,
-		opportunityName: currentOpportunityName,
-		status,
-		startDate,
-		opportunityType,
-		workingDays
-	} = currentOpportunity;
-    const monthEndDate = getLastDayOfMonth(startBuildDate);
-    const cell = document.getElementById(monthEndDate);
+// function createSiblingOpportunity(currentOpportunity, startBuildDate, monthDiff) {
+//     const {
+// 		id: currentOpportunityId,
+// 		opportunityName: currentOpportunityName,
+// 		status,
+// 		startDate,
+// 		opportunityType,
+// 		workingDays
+// 	} = currentOpportunity;
+//     const monthEndDate = getLastDayOfMonth(startBuildDate);
+//     const cell = document.getElementById(monthEndDate);
     
-    if (monthDiff > 1) {
-    	for (let i = 1; i <= monthDiff; i++) { // Start from 1 to avoid "id-0"
-        const opportunityDiv = document.createElement("div");
-        opportunityDiv.id = `${currentOpportunityId}-${i}`;
+//     if (monthDiff > 1) {
+//     	for (let i = 1; i <= monthDiff; i++) { // Start from 1 to avoid "id-0"
+//         const opportunityDiv = document.createElement("div");
+//         opportunityDiv.id = `${currentOpportunityId}-${i}`;
 
-        // Ensure ID uniqueness before adding
-        if (!document.getElementById(opportunityDiv.id)) {
-            console.log(`Created sibling with ID: ${opportunityDiv.id}`);
-        } else {
-            console.warn(`ID ${opportunityDiv.id} already exists!`);
-        }
-    	}
-    } else {
-    	const opportunityDiv = document.createElement("div");
-        opportunityDiv.style.height = "132.38px";
-	    opportunityDiv.id = `${currentOpportunityId}-${monthDiff}`;
-	    opportunityDiv.setAttribute('data-hire-type', opportunityType);
-	    opportunityDiv.innerHTML = setSiblingInnerHTML(startBuildDate, startDate, currentOpportunityName);
-	    cell.appendChild(opportunityDiv);
-        startBuildDate = isDateVisible(startBuildDate, monthEndDate);
-	    setDivStyle(opportunityDiv, status, workingDays, startBuildDate, monthEndDate, currentOpportunityId);
+//         // Ensure ID uniqueness before adding
+//         if (!document.getElementById(opportunityDiv.id)) {
+//             console.log(`Created sibling with ID: ${opportunityDiv.id}`);
+//         } else {
+//             console.warn(`ID ${opportunityDiv.id} already exists!`);
+//         }
+//     	}
+//     } else {
+//     	const opportunityDiv = document.createElement("div");
+//         opportunityDiv.style.height = "132.38px";
+// 	    opportunityDiv.id = `${currentOpportunityId}-${monthDiff}`;
+// 	    opportunityDiv.setAttribute('data-hire-type', opportunityType);
+// 	    opportunityDiv.innerHTML = setSiblingInnerHTML(startBuildDate, startDate, currentOpportunityName);
+// 	    cell.appendChild(opportunityDiv);
+//         startBuildDate = isDateVisible(startBuildDate, monthEndDate);
+// 	    setDivStyle(opportunityDiv, status, workingDays, startBuildDate, monthEndDate, currentOpportunityId);
 	    // adjustTableRowHeights();
-    }
-}
+//     }
+// }
 
 /**
  * Attaches event listeners to the "Include Weekends" checkbox and the carpenters input field.
@@ -349,7 +400,7 @@ function createSiblingOpportunity(currentOpportunity, startBuildDate, monthDiff)
  * @param {Object|null} [previousOpportunity=null] - The previous opportunity data, if available.
  * @param {boolean} [matchFound=false] - Indicates whether a matching previous opportunity exists.
  */
-function attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, previousOpportunity = null, matchFound = false) {
+async function attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, startDate, previousOpportunity = null, matchFound = false, pfd = false) {
     if (!includeWeekends) {
         console.error("Error: includeWeekends element not found for", currentOpportunity.id);
         return;
@@ -360,16 +411,19 @@ function attachEventListeners(includeWeekends, carpentersInput, currentOpportuni
         return;
     }
     
-    let carpPerDay = calculateDailyCarpenters(startBuildDate, startDate, carpentersInput, includeWeekends.checked);
+    let carpPerDay = pfd ? calculateDailyCarpenters(startBuildDate, startDate, carpentersInput, includeWeekends.checked, true) : calculateDailyCarpenters(startBuildDate, startDate, carpentersInput, includeWeekends.checked);
 
-    includeWeekends.addEventListener("change", () => {
+    includeWeekends.addEventListener("change", async () => {
         removeDailyCarpenters(carpPerDay);
+        const newState = includeWeekends.checked;
+        await updateWeekendsInput(currentOpportunity, newState);
         handleInputChange(carpentersInput, currentOpportunity, cell, previousOpportunity, matchFound);
     });
 
-    carpentersInput.inputField.addEventListener("change", () => {
-        carpPerDay = calculateDailyCarpenters(startBuildDate, startDate, carpentersInput, includeWeekends.checked);
+    carpentersInput.inputField.addEventListener("change", async () => {
+        carpPerDay = pfd ? calculateDailyCarpenters(startBuildDate, startDate, carpentersInput, includeWeekends.checked, true) : calculateDailyCarpenters(startBuildDate, startDate, carpentersInput, includeWeekends.checked);
         removeDailyCarpenters(carpPerDay);
+        await updateCarpenters(currentOpportunity, carpentersInput.inputField)
         handleInputChange(carpentersInput, currentOpportunity, cell, previousOpportunity, matchFound);
     });
 }
@@ -383,7 +437,7 @@ function attachEventListeners(includeWeekends, carpentersInput, currentOpportuni
  * @param {Object|null} [previousOpportunity=null] - The previous opportunity data, if available.
  * @param {boolean} [matchFound=false] - Indicates whether a matching previous opportunity exists.
  */
-function handleInputChange(carpentersInput, currentOpportunity, cell, previousOpportunity = null, matchFound = false) {
+async function handleInputChange(carpentersInput, currentOpportunity, cell, previousOpportunity = null, matchFound = false) {
     if (!cell) {
         console.error("Error: cell element not found for startDate:", currentOpportunity.startDate);
         return;
@@ -395,25 +449,34 @@ function handleInputChange(carpentersInput, currentOpportunity, cell, previousOp
         return;
     }
 
-    const { id: currentOpportunityId, totalHours, startDate, status } = currentOpportunity;
-    const workingDays = calculateWorkingDays(totalHours, carpentersInputField.value);
+    const {
+         opportunity_id: currentOpportunityId,
+         custom_input: { date_out: startDate } = {},
+         custom_input: { planned_finish_date: plannedFinish } = {},
+         status,
+    } = currentOpportunity;
 
     // Remove any existing opportunity divs before appending a new one
     removeOldDivs(currentOpportunityId);
 
     // Create new opportunity element
-    const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput: newCarpentersInput } = createOpportunityElement(
+    const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput: newCarpentersInput, workingDays } = await createOpportunityElement(
         currentOpportunity, 
         previousOpportunity, 
         matchFound, 
-        workingDays
+        true
     );
 
     // Append, style & attach event listeners
     cell.appendChild(opportunityDiv);
-    setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
+    if (plannedFinish) {
+        setDivStyle(opportunityDiv, status, workingDays, startBuildDate, plannedFinish);
+        attachEventListeners(includeWeekends, newCarpentersInput, currentOpportunity, cell, startBuildDate, plannedFinish, previousOpportunity, matchFound, true);
+    } else {
+        setDivStyle(opportunityDiv, status, workingDays, startBuildDate, startDate);
+        attachEventListeners(includeWeekends, newCarpentersInput, currentOpportunity, cell, startBuildDate, startDate, previousOpportunity, matchFound);
+    }
     adjustTableRowHeights();
-    attachEventListeners(includeWeekends, newCarpentersInput, currentOpportunity, cell, startBuildDate, startDate, previousOpportunity, matchFound);
     clickDisplayNone();
 }
 
@@ -429,16 +492,13 @@ function getScenicTagOpportunities(opportunities) {
         // Iterate through the opportunities
         for (let i = 0; i < opportunities.length; i++) {
             //Create an array to store scenic opportunities
-            let opportunity = opportunities[i].opportunity;
-            let items = opportunities[i].items;
+            let opportunity = opportunities[i];
 
             //Check if the opportunity has a scenic tag
-            if (opportunity.tag_list && opportunity.tag_list.includes('SCENIC')) {
+            if (opportunity.tags && opportunity.tags.includes('SCENIC')) {
+                
                 //Add the opportunity to the scenic opportunities array
-                scenicOpportunities.push({
-                    'opportunity': opportunity,
-                    'items': items
-                });
+                scenicOpportunities.push(opportunity);
             }   
         }
 
@@ -459,95 +519,97 @@ function getScenicTagOpportunities(opportunities) {
  * @param {array} activeProducts - The active products list
  * @returns {array} - The items that exist in the active products list
  */
-function confirmItemsExistInActiveProducts(opportunityItems, activeProducts) {
-    // Check if opportunityItems and activeProducts are arrays
-    if (!Array.isArray(opportunityItems) || !Array.isArray(activeProducts)) {
-        console.error('Invalid input to confirmItemsExistInActiveProducts: opportunityItems and activeProducts must be arrays');
-        const errorMsgDiv = document.querySelector('#api-error-msg');
-        const errorMsg = document.createElement('p');
-        errorMsg.textContent = 'An error occurred while running the confirmItemsExistInActiveProducts function: opportunityItems and activeProducts must be arrays';
-        errorMsgDiv.appendChild(errorMsg);
-        return [];
-    }
+// function confirmItemsExistInActiveProducts(opportunityItems, activeProducts) {
+//     // Check if opportunityItems and activeProducts are arrays
+//     if (!Array.isArray(opportunityItems) || !Array.isArray(activeProducts)) {
+//         console.error('Invalid input to confirmItemsExistInActiveProducts: opportunityItems and activeProducts must be arrays');
+//         const errorMsgDiv = document.querySelector('#api-error-msg');
+//         const errorMsg = document.createElement('p');
+//         errorMsg.textContent = 'An error occurred while running the confirmItemsExistInActiveProducts function: opportunityItems and activeProducts must be arrays';
+//         errorMsgDiv.appendChild(errorMsg);
+//         return [];
+//     }
 
-    try {
-        let itemNameArray = [];
+//     try {
+//         let itemNameArray = [];
 
-        // Iterate through opportunity items and check if they are in the active products list
-        for (let k = 0; k < opportunityItems.length; k++) {
-            let itemName = opportunityItems[k].name;
-            let itemQuantity = opportunityItems[k].quantity;
-            for (let l = 0; l < activeProducts.length; l++) {
-                let activeProductName = activeProducts[l].name;
-                if (itemName === activeProductName) {
-                    itemNameArray.push({
-                        'name': itemName,
-                        'quantity': itemQuantity
-                    });
-                }
-            }
-        }
+//         // Iterate through opportunity items and check if they are in the active products list
+//         for (let k = 0; k < opportunityItems.length; k++) {
+//             let itemName = opportunityItems[k].name;
+//             let itemQuantity = opportunityItems[k].quantity;
+//             for (let l = 0; l < activeProducts.length; l++) {
+//                 let activeProductName = activeProducts[l].name;
+//                 if (itemName === activeProductName) {
+//                     itemNameArray.push({
+//                         'name': itemName,
+//                         'quantity': itemQuantity
+//                     });
+//                 }
+//             }
+//         }
 
-        return itemNameArray;
-    } catch (error) {
-        console.error('Error in confirmItemsExistInActiveProducts:', error);
-        const errorMsgDiv = document.querySelector('#api-error-msg');
-        const errorMsg = document.createElement('p');
-        errorMsg.textContent = 'An error occurred while running the confirmItemsExistInActiveProducts function when attempting to confirm the items exist in the active products list: ' + error;
-        errorMsgDiv.appendChild(errorMsg);
-        return [];
-    }
-}
+//         return itemNameArray;
+//     } catch (error) {
+//         console.error('Error in confirmItemsExistInActiveProducts:', error);
+//         const errorMsgDiv = document.querySelector('#api-error-msg');
+//         const errorMsg = document.createElement('p');
+//         errorMsg.textContent = 'An error occurred while running the confirmItemsExistInActiveProducts function when attempting to confirm the items exist in the active products list: ' + error;
+//         errorMsgDiv.appendChild(errorMsg);
+//         return [];
+//     }
+// }
 
 /**
  * Function to calculate the total quantity of half hours for each item and convert to hours
  * @param {array} itemNameArray - The item name array containing an object with the item name and quantity
  * @returns {array} - The scenic calc array containing the item name and quantity in hours
  */
-function calculateScenicCalcItemQuantity(itemNameArray) {
-    // Check if itemNameArray is an array
-    if (!Array.isArray(itemNameArray)) {
-        console.error('Invalid input to calculateScenicCalcItemQuantity: itemNameArray must be an array');
-        const errorMsgDiv = document.querySelector('#api-error-msg');
-        const errorMsg = document.createElement('p');
-        errorMsg.textContent = 'An error occurred while running the calculateScenicCalcItemQuantity function: itemNameArray must be an array';
-        errorMsgDiv.appendChild(errorMsg);
-        return [];
-    }
+// function calculateScenicCalcItemQuantity(itemNameArray) {
+//     // Check if itemNameArray is an array
+//     if (!Array.isArray(itemNameArray)) {
+//         console.error('Invalid input to calculateScenicCalcItemQuantity: itemNameArray must be an array');
+//         const errorMsgDiv = document.querySelector('#api-error-msg');
+//         const errorMsg = document.createElement('p');
+//         errorMsg.textContent = 'An error occurred while running the calculateScenicCalcItemQuantity function: itemNameArray must be an array';
+//         errorMsgDiv.appendChild(errorMsg);
+//         return [];
+//     }
 
-    try {
-        let scenicCalcArray = [];
+//     try {
+//         let scenicCalcArray = [];
 
-        // Iterate through the item name array and calculate the total quantity of each item
-        for (let m = 0; m < itemNameArray.length; m++) {
-            let itemName = itemNameArray[m].name.split("-")[0].trim();
-            let itemQuantity = itemNameArray[m].quantity;
-            let itemExists = false;
-            for (let n = 0; n < scenicCalcArray.length; n++) {
-                if (itemName === scenicCalcArray[n].name) {
-                    scenicCalcArray[n].quantity = parseFloat(scenicCalcArray[n].quantity) + (parseFloat(itemQuantity) / 2);
-                    itemExists = true;
-                }
-            }
-            if (!itemExists) {
-                scenicCalcArray.push({
-                    'name': itemName,
-                    'quantity': parseFloat(itemQuantity) / 2
-                });
-            }
-        }
+//         // Iterate through the item name array and calculate the total quantity of each item
+//         for (let i = 0; i < itemNameArray.length; i++) {
+//             const currentItemId = itemNameArray[i].current_item_id;
+//             const itemName = itemNameArray[i].name.split("-")[0].trim();
+//             const itemQuantity = itemNameArray[i].item_total;
+//             const previousItemQuantity = itemNameArray[i].previous_item_total;
+//             const itemUpdatedAt = itemNameArray[i].item_updated_at;
+//             const itemPreviouslyUpdatedAt = itemNameArray[i].item_previously_updated_at;
 
-        return scenicCalcArray;
 
-    } catch (error) {
-        console.error('Error in calculateScenicCalcItemQuantity:', error);
-        const errorMsgDiv = document.querySelector('#api-error-msg');
-        const errorMsg = document.createElement('p');
-        errorMsg.textContent = 'An error occurred while running the calculateScenicCalcItemQuantity function when attempting to calculate the total quantity of each item: ' + error;
-        errorMsgDiv.appendChild(errorMsg);
-        return [];
-    }
-}
+//             scenicCalcArray.push({
+//                 'current_item_id': currentItemId,
+//                 'name': itemName,
+//                 'quantity': parseFloat(itemQuantity) / 2,
+//                 'previous_quantity': parseFloat(previousItemQuantity) / 2,
+//                 'item_updated_at': itemUpdatedAt,
+//                 'item_previously_updated_at': itemPreviouslyUpdatedAt,
+//             });
+            
+//         }
+
+//         return scenicCalcArray;
+
+//     } catch (error) {
+//         console.error('Error in calculateScenicCalcItemQuantity:', error);
+//         const errorMsgDiv = document.querySelector('#api-error-msg');
+//         const errorMsg = document.createElement('p');
+//         errorMsg.textContent = 'An error occurred while running the calculateScenicCalcItemQuantity function when attempting to calculate the total quantity of each item: ' + error;
+//         errorMsgDiv.appendChild(errorMsg);
+//         return [];
+//     }
+// }
 
 /**
  * Function to calculate the total hours from the scenic calc array
@@ -590,7 +652,7 @@ function calculateTotalHours(calcArray) {
  * @param {number} carpentersInput - The number of carpenters input
  * @returns {number} - The number of working days
  */
-function calculateWorkingDays(totalHours, carpentersInput) {
+async function calculateWorkingDays(totalHours, carpentersInput) {
     // Check the total hours is a number
     if (isNaN(totalHours)) {
         console.error('Invalid input to calculateWorkingDays: totalHours must be a number');
@@ -611,8 +673,8 @@ function calculateWorkingDays(totalHours, carpentersInput) {
         return 0;
     }
 
-    let workingHalfDays = Math.ceil((totalHours / 4) / carpentersInput);
-    let workingDays = workingHalfDays / 2;
+    const workingHalfDays = Math.ceil((totalHours / 4) / carpentersInput);
+    const workingDays = workingHalfDays / 2;
 
     return workingDays;
 }
@@ -634,50 +696,56 @@ function createScenicCalcDiv(opportunityElement, startBuildDate) {
     }
 
     // Check that the opportunity element has the required properties
-    if (!opportunityElement.scenicCalcArray || !Array.isArray(opportunityElement.scenicCalcArray) || !opportunityElement.client || !opportunityElement.startDate || !opportunityElement.startTime || !opportunityElement.statusName || typeof opportunityElement.totalHours !== 'number' || typeof opportunityElement.workingDays !== 'number') {
+    if (!opportunityElement.items || !Array.isArray(opportunityElement.items) || !opportunityElement.client || !opportunityElement.custom_input["date_out"] || !opportunityElement.custom_input["time_out"] || !opportunityElement.status_name || typeof opportunityElement.totals["grand_total"] !== 'number' || typeof opportunityElement.custom_input["working_days"] !== 'number') {
         console.error('Invalid input to createScenicCalcDiv: opportunityElement must have the required properties');
         const errorMsgDiv = document.querySelector('#api-error-msg');
         const errorMsg = document.createElement('p');
         errorMsg.textContent = 'An error occurred while running the createScenicCalcDiv function: opportunityElement must have the required properties';
         errorMsgDiv.appendChild(errorMsg);
         return {};
-    }
-        
+    }   
 
     try {
-        let calcArray = opportunityElement.scenicCalcArray;
-        let client = opportunityElement.client;
-        let startDate = opportunityElement.startDate;
-        let startTime = opportunityElement.startTime;
-        let status = opportunityElement.statusName;
-        let totalHours = opportunityElement.totalHours;
-        let workingDays = opportunityElement.workingDays;
+        const id = opportunityElement.opportunity_id;
+        const calcArray = opportunityElement.items;
+        const client = opportunityElement.client;
+        const startDate = opportunityElement.custom_input["date_out"];
+        const startTime = opportunityElement.custom_input["time_out"];
+        const status = opportunityElement.status_name;
+        const totalHours = opportunityElement.totals["grand_total"];
+        const workingDays = opportunityElement.custom_input["working_days"];
+        const plannedFinishDate = opportunityElement.custom_input["planned_finish_date"] || "N/A";
+        const includeWeekends = opportunityElement.custom_input["include_weekends"] === true ? "Yes" : "No";
+        const numOfCarpenters = opportunityElement.custom_input["num_of_carpenters"];
 
         // Create a div to display the Scenic Calc items
-        let scenicCalcDiv = document.createElement('div');
+        const scenicCalcDiv = document.createElement('div');
         scenicCalcDiv.classList.add('card-text');
-        for (let o = 0; o < calcArray.length; o++) {
-            let scenicCalcName = calcArray[o].name;
-            let scenicCalcQuantity = calcArray[o].quantity;
-            let scenicCalcP = document.createElement('p');
+        for (let i = 0; i < calcArray.length; i++) {
+            const scenicCalcName = calcArray[i].name;
+            const scenicCalcQuantity = calcArray[i].item_total;
+            const scenicCalcP = document.createElement('p');
             scenicCalcP.classList.add('position-relative');
             scenicCalcP.innerHTML = `<span class="bold-text">${scenicCalcName}:</span> ${scenicCalcQuantity} hours`;
             scenicCalcDiv.appendChild(scenicCalcP);
         }
 
         // Add the total hours and working days to the Scenic Calc div
-        let totalHoursP = document.createElement('p');
+        const totalHoursP = document.createElement('p');
         totalHoursP.classList.add('position-relative');
         totalHoursP.innerHTML = `<span class="bold-text">Total:</span> ${totalHours} hours / ${workingDays} days`;
 
         // Add other elements to the modal body
-        let clientP = additionalContent('Client', client);
-        let dateOutP = additionalContent('Date Out', startDate, startTime);
-        let startBuildDateP = additionalContent('Start Build Date', startBuildDate);
-        let statusP = additionalContent('Status', status);
+        const clientP = additionalContent('Client', `client-name-${id}`, client);
+        const dateOutP = additionalContent('Date Out', `date-out-${id}`, startDate, startTime);
+        const startBuildDateP = additionalContent('Start Build Date', `start-build-date-${id}`, startBuildDate);
+        const statusP = additionalContent('Status', `status-${id}`, status);
+        const plannedFinishDateP = additionalContent('Planned Finish Date', `planned-finish-date-${id}`, plannedFinishDate);
+        const includeWeekendsP = additionalContent('Include Weekends', `include-weekends-${id}`, includeWeekends);
+        const numOfCarpentersP = additionalContent('Number of Carpenters', `num-of-carpenters-${id}`, numOfCarpenters);
 
         // Get the modal body element
-        let modalBody = document.querySelector('#scenicCalcModal .modal-body');
+        const modalBody = document.querySelector('#scenicCalcModal .modal-body');
 
         // Clear the modal body before appending the scenicCalcDiv
         modalBody.innerHTML = '';
@@ -686,6 +754,9 @@ function createScenicCalcDiv(opportunityElement, startBuildDate) {
         modalBody.appendChild(clientP);
         modalBody.appendChild(dateOutP);
         modalBody.appendChild(startBuildDateP);
+        modalBody.appendChild(plannedFinishDateP);
+        modalBody.appendChild(includeWeekendsP);
+        modalBody.appendChild(numOfCarpentersP);
         modalBody.appendChild(statusP);
         modalBody.appendChild(scenicCalcDiv);
         modalBody.appendChild(totalHoursP);
@@ -709,11 +780,11 @@ function createScenicCalcDiv(opportunityElement, startBuildDate) {
  */
 function setOpportunityDateAndTime(opportunityEvent) {
     // Check that the opportunity event is an object
-    if (typeof opportunityEvent !== 'object' || !opportunityEvent.opportunity || typeof opportunityEvent.opportunity !== 'object') {
-        console.error('Invalid input to setOpportunityDateAndTime: opportunityEvent must be an object and opportunityEvent.opportunity must exist and be an object');
+    if (typeof opportunityEvent !== 'object') {
+        console.error('Invalid input to setOpportunityDateAndTime: opportunityEvent must be an object');
         const errorMsgDiv = document.querySelector('#api-error-msg');
         const errorMsg = document.createElement('p');
-        errorMsg.textContent = 'An error occurred while running the setOpportunityDateAndTime function: opportunityEvent must be an object and opportunityEvent.opportunity must exist and be an object';
+        errorMsg.textContent = 'An error occurred while running the setOpportunityDateAndTime function: opportunityEvent must be an object';
         errorMsgDiv.appendChild(errorMsg);
         return { startDate: '', startTime: '' };
     }
@@ -724,17 +795,17 @@ function setOpportunityDateAndTime(opportunityEvent) {
         let loadStartsAt;
 
         // Set the start date and time
-        if (opportunityEvent.opportunity['load_starts_at'] !== null) {
-            startDate = opportunityEvent.opportunity['load_starts_at'].split('T')[0];
-            loadStartsAt = new Date(opportunityEvent.opportunity['load_starts_at']);
+        if (opportunityEvent.load_starts_at !== null) {
+            startDate = opportunityEvent.load_starts_at.split('T')[0];
+            loadStartsAt = new Date(opportunityEvent.load_starts_at);
             startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        } else if (opportunityEvent.opportunity['deliver_starts_at'] !== null) {
-            startDate = opportunityEvent.opportunity['deliver_starts_at'].split('T')[0];
-            loadStartsAt = new Date(opportunityEvent.opportunity['deliver_starts_at']);
+        } else if (opportunityEvent.deliver_starts_at !== null) {
+            startDate = opportunityEvent.deliver_starts_at.split('T')[0];
+            loadStartsAt = new Date(opportunityEvent.deliver_starts_at);
             startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         } else {
-            startDate = opportunityEvent.opportunity['starts_at'].split('T')[0];
-            loadStartsAt = new Date(opportunityEvent.opportunity['starts_at']);
+            startDate = opportunityEvent.starts_at.split('T')[0];
+            loadStartsAt = new Date(opportunityEvent.starts_at);
             startTime = loadStartsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         }
 
@@ -754,11 +825,11 @@ function setOpportunityDateAndTime(opportunityEvent) {
  */
 function setOpportunityType(opportunityEvent) {
     // Check that the opportunity event is an object
-    if (typeof opportunityEvent !== 'object' || !opportunityEvent.opportunity || typeof opportunityEvent.opportunity !== 'object' || !opportunityEvent.opportunity.custom_fields || typeof opportunityEvent.opportunity.custom_fields !== 'object') {
-        console.error('Invalid input to setOpportunityType: opportunityEvent must be an object, opportunityEvent.opportunity and opportunityEvent.opportunity.custom_fields must exist and be objects');
+    if (typeof opportunityEvent !== 'object') {
+        console.error('Invalid input to setOpportunityType: opportunityEvent must be an object');
         const errorMsgDiv = document.querySelector('#api-error-msg');
         const errorMsg = document.createElement('p');
-        errorMsg.textContent = 'An error occurred while running the setOpportunityType function: opportunityEvent must be an object, opportunityEvent.opportunity and opportunityEvent.opportunity.custom_fields must exist and be objects';
+        errorMsg.textContent = 'An error occurred while running the setOpportunityType function: opportunityEvent must be an object';
         errorMsgDiv.appendChild(errorMsg);
         return '';
     }
@@ -767,9 +838,9 @@ function setOpportunityType(opportunityEvent) {
         let opportunityType;
 
         // Set the opportunity type
-        if (opportunityEvent.opportunity['custom_fields']['dry_hire'] === 'Yes') {
+        if (opportunityEvent.dry_hire === 'Yes') {
             opportunityType = 'Dry Hire';
-        } else if (opportunityEvent.opportunity['custom_fields']['dry_hire_transport'] === 'Yes') {
+        } else if (opportunityEvent.dry_hire_transport === 'Yes') {
             opportunityType = 'Dry Hire Transport';
         } else {
             opportunityType = 'Wet Hire';
@@ -874,13 +945,13 @@ function createDailyCarpentersDiv(id) {
  * @param {object} opportunityElementTwo - The second opportunity element object
  */
 function updateModalContent(button, opportunityElementOne, startBuildDate, opportunityElementTwo=null) {
-    let id = opportunityElementOne.id;
+    // const id = opportunityElementOne.opportunity_id;
     button.addEventListener('click', function() {
         // Get the opportunity name
-        let opportunityName = this.parentElement.querySelector('.badge').textContent;
+        const opportunityName = this.parentElement.querySelector('.badge').textContent;
 
         // Get the modal title element
-        let modalTitle = document.querySelector('#scenicCalcModal .modal-title');
+        const modalTitle = document.querySelector('#scenicCalcModal .modal-title');
 
         // Set the modal title
         modalTitle.textContent = opportunityName;
@@ -888,7 +959,7 @@ function updateModalContent(button, opportunityElementOne, startBuildDate, oppor
 
         // Create the scenicCalcDiv and append it to the modal body
         compareScenicCalcModals(opportunityElementOne, startBuildDate, opportunityElementTwo);
-        openOpportunity(id);
+        openOpportunity(opportunityElementOne);
     });
 }
 
@@ -896,40 +967,226 @@ function updateModalContent(button, opportunityElementOne, startBuildDate, oppor
  * Function to create buttons to open the opportunity in a new tab or close the modal
  * @param {number} id - The opportunity ID
  */
-function openOpportunity(id) {
-    let anchor = document.createElement('a');
+function openOpportunity(opportunity) {
+    const id = opportunity.opportunity_id;
+    const anchor = document.createElement('a');
     anchor.href = `https://lfps.current-rms.com/opportunities/${id}`;
     anchor.target = '_blank';
     anchor.className = 'btn btn-primary';
     anchor.textContent = 'Open in Current RMS';
 
-    let closeButton = document.createElement('button');
+    const saveButton = document.createElement('button');
+    saveButton.id = 'save-button';
+    saveButton.type = 'button';
+    saveButton.className = 'btn btn-success d-none';
+    saveButton.textContent = 'Save';
+
+    const editButton = document.createElement('button');
+    editButton.id = 'edit-button';
+    editButton.type = 'button';
+    editButton.className = 'btn btn-info';
+    editButton.textContent = 'Edit';
+    editButton.addEventListener('click', () => enableEditing(opportunity));
+
+    const closeButton = document.createElement('button');
     closeButton.type = 'button';
     closeButton.className = 'btn btn-secondary';
     closeButton.setAttribute('data-bs-dismiss', 'modal');
     closeButton.textContent = 'Close';
 
+    const errorBox = document.createElement('div');
+    errorBox.id = "scenicCalcError";
+    errorBox.className = "mt-2 text-danger small d-none";
+
     // Get modal footer element
-    let modalFooter = document.querySelector('#scenicCalcModal .modal-footer');
+    const modalFooter = document.querySelector('#scenicCalcModal .modal-footer');
 
     // Clear the modal footer before appending the anchor
     modalFooter.innerHTML = '';
 
     // Append the anchor to the modal footer
+    modalFooter.appendChild(errorBox);
     modalFooter.appendChild(anchor);
+    modalFooter.appendChild(saveButton);
+    modalFooter.appendChild(editButton);
     modalFooter.appendChild(closeButton);
+}
 
+function enableEditing(opportunity) {
+    const id = opportunity.opportunity_id;
+    const modalBody = document.querySelector('#scenicCalcModal .modal-body');
+
+    const numCarpentersElem = modalBody.querySelector(`#num-of-carpenters-${id}`);
+    const includeWeekendsElem = modalBody.querySelector(`#include-weekends-${id}`);
+    const plannedFinishElem = modalBody.querySelector(`#planned-finish-date-${id}`);
+
+    const currentNum = numCarpentersElem.textContent.trim();
+    const currentInclude = includeWeekendsElem.textContent.trim().toLowerCase() === 'yes';
+    const currentPlanned = plannedFinishElem.textContent.trim();
+    const safeDate = normaliseDateString(currentPlanned);
+
+    numCarpentersElem.innerHTML = `
+        <input id="edit-num-carpenters-${id}" type="number" min="1"
+               class="form-control form-control-sm"
+               value="${currentNum || 1}">
+    `;
+    includeWeekendsElem.innerHTML = `
+        <input id="edit-include-weekends-${id}" type="checkbox"
+               ${currentInclude ? 'checked' : ''}>
+    `;
+    plannedFinishElem.innerHTML = `
+        <input id="edit-planned-finish-date-${id}" type="date"
+               class="form-control form-control-sm"
+               value="${safeDate}">
+    `;
+
+    const editButton = document.getElementById('edit-button');
+    editButton.classList.add('d-none');
+    const saveButton = document.getElementById('save-button');
+    saveButton.classList.remove('d-none');
+    // editButton.replaceWith(editButton.cloneNode(true));
+    // const newButton = document.querySelector('.btn-success');
+    // newButton.addEventListener('click', () => saveEdits(opportunity));
+
+    saveButton.onclick = () => saveEdits(opportunity, saveButton);
+
+    const plannedFinishInput = document.querySelector(`#edit-planned-finish-date-${id}`);
+    const errorBox = document.getElementById("scenicCalcError");
+
+    plannedFinishInput.addEventListener('input', () => {
+        plannedFinishInput.classList.remove('is-invalid');
+        errorBox.classList.add('d-none');
+        errorBox.textContent = '';
+        console.log(`Planned Finish date: ${plannedFinishInput.value}`);
+    });
+}
+
+async function saveEdits(opportunity, button) {
+    const {
+        opportunity_id: id,
+        totals: {grand_total: totalHours} = {},
+        custom_input: { date_out: startDate } = {},
+    } = opportunity;
+    const editButton = document.getElementById('edit-button');
+    button.disabled = true;
+    button.textContent = 'Saving...';
+
+    const numCarpentersValue = document.querySelector(`#edit-num-carpenters-${id}`).value;
+    const numCarpenters = numCarpentersValue ? parseInt(numCarpentersValue, 10) : 1;
+    const includeWeekends = document.querySelector(`#edit-include-weekends-${id}`).checked;
+    const plannedFinishElm = document.querySelector(`#edit-planned-finish-date-${id}`);
+    let plannedFinish = plannedFinishElm.value;
+    console.log(`Planned Finish Date in saveEdits: ${plannedFinish}`);
+    const workingDays = await calculateWorkingDays(totalHours, numCarpenters);
+
+    const scenicModalEl = document.getElementById('scenicCalcModal');
+    const scenicModal = bootstrap.Modal.getInstance(scenicModalEl);
+
+    const plannedFinishInput = document.querySelector(`#edit-planned-finish-date-${id}`);
+    const errorBox = document.getElementById('scenicCalcError');
+
+    plannedFinishInput.classList.remove('is-invalid');
+    errorBox.classList.add('d-none');
+    errorBox.textContent = '';
+
+    const plannedFinishDate = plannedFinish ? new Date(plannedFinish) : null;
+    const startDateObj = new Date(startDate);
+
+    if (plannedFinishDate && plannedFinishDate >= startDateObj) {
+        plannedFinishInput.classList.add('is-invalid');
+        errorBox.textContent = 'Planned finish date must be before the start date.';
+        errorBox.classList.remove('d-none');
+
+        button.disabled = false;
+        button.textContent = 'Save';
+        return;
+    }
+
+    let startBuildDate;
+    if (plannedFinish) {
+        plannedFinish = new Date(plannedFinish).toISOString().split('T')[0];
+        startBuildDate = createStartBuildDate(workingDays, plannedFinish, includeWeekends, true)
+    } else {
+        plannedFinish = null;
+        startBuildDate = createStartBuildDate(workingDays, startDate, includeWeekends)
+    }
+
+    try {
+        const response = await fetch(`/workload/opportunities/${id}/custom_input/` , {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            body: JSON.stringify({
+                num_of_carpenters: numCarpenters,
+                include_weekends: includeWeekends,
+                planned_finish_date: plannedFinish,
+                working_days: workingDays,
+                start_build_date: startBuildDate,
+            }),
+        });
+
+        if (scenicModal) {
+                scenicModal.hide();
+            }
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Updated successfully:', data.updated_data);
+            showMessageModal('Opportunity updated successfully');
+            const messageModalEl = document.getElementById('messageModal');
+
+            messageModalEl.addEventListener(
+                'hidden.bs.modal',
+                () => window.location.reload(),
+                { once: true }
+            );
+        } else {
+            console.error('Failed to save changes.');
+            showMessageModal('Failed to save changes');
+        }
+    } catch (err) {
+        console.error('Error saving changes: ', err);
+        showMessageModal('Error saving changes');
+    } finally {
+        button.disabled = false;
+        button.classList.add('d-none');
+        editButton.classList.remove('d-none');
+        button.onclick = () => enableEditing(opportunity);
+    }
+}
+
+function normaliseDateString(str) {
+    if (!str) {
+        console.log("Not a string!");
+        return "";
+    }
+    // Reject non-date placeholders
+    if (str === "N/A" || str === "None" || str === "-" || str === "null") {
+        console.log("Not a valid value");
+        console.log(`String value: ${str}`);
+        return "";
+    }
+    // If already valid yyyy-mm-dd, keep it
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        console.log("Vaild!");
+        return str
+    };
+    
+    console.log("Did not match any validations, returning empty");
+    return "";
 }
 
 /**
  * Function to add additional content to the modal
  */
-function additionalContent(string, content, contentTwo=null) {
-    let contentP = document.createElement('p');
+function additionalContent(string, idString, content, contentTwo=null) {
+    const contentP = document.createElement('p');
     if (contentTwo) {
-        contentP.innerHTML = `<span class="bold-text">${string}:</span> ${content}, ${contentTwo}`
+        contentP.innerHTML = `<span class="bold-text">${string}: </span><span id="${idString}">${content}, ${contentTwo}</span>`
     } else{
-        contentP.innerHTML = `<span class="bold-text">${string}:</span> ${content}`
+        contentP.innerHTML = `<span class="bold-text">${string}: </span><span id="${idString}">${content}</span>`
     }
 
     return contentP;
@@ -940,106 +1197,101 @@ function additionalContent(string, content, contentTwo=null) {
  * @param {object} currentData - The current opportunity data
  * @param {object} previousData - The previous opportunity data
  */
-function compareOpportunityData(currentData, previousData=null) {
-    let currentOpportunityElements = currentData;
-    console.log('Current opportunity elements');
-    console.log(currentOpportunityElements);
+// function compareOpportunityData(currentData, previousData=null) {
+//     let currentOpportunityElements = currentData;
+//     console.log('Current opportunity elements');
+//     console.log(currentOpportunityElements);
 
-    // Check if there is previous data
-    if (previousData !== null) {
-        let previousOpportunityElements = previousData;
-        console.log('Previous opportunity elements');
-        console.log(previousOpportunityElements);
-    }
-}
+//     // Check if there is previous data
+//     if (previousData !== null) {
+//         let previousOpportunityElements = previousData;
+//         console.log('Previous opportunity elements');
+//         console.log(previousOpportunityElements);
+//     }
+// }
 
 /**
  * Function to iterate through the opportunity data and get the required element objects
  * @param {object} opportunityData - The opportunity data
  * @returns {array} - The opportunity element objects
  */
-function getOpportunityElementObjects(opportunityData) {
-    try {
-        if (opportunityData === null) {
-            return [];
-        } else {
-            let opportunities = opportunityData.opportunities_with_items;
-            let scenicOpportunities = getScenicTagOpportunities(opportunities);
-            let activeProducts = opportunityData.active_products;
-            let opportunityElements = [];
-            let opportunityElement = {};
+// function getOpportunityElementObjects(opportunityData) {
+//     try {
+//         if (opportunityData === null) {
+//             return [];
+//         } else {
+//             let scenicOpportunities = getScenicTagOpportunities(opportunityData);
+//             let opportunityElements = [];
+//             let opportunityElement = {};
 
-            // Iterate through the current scenic opportunities
-            for (let i = 0; i < scenicOpportunities.length; i++) {
-                let scenicOpportunity = scenicOpportunities[i];
-                let status = scenicOpportunity.opportunity['status'];
-                let statusName = scenicOpportunity.opportunity['status_name'];
-                let opportunityName = scenicOpportunity.opportunity['subject'];
-                let id = scenicOpportunity.opportunity['id'];
-                let client = scenicOpportunity.opportunity['member']['name'];
-                let opportunityItems = scenicOpportunity.items;
+//             // Iterate through the current scenic opportunities
+//             for (let i = 0; i < scenicOpportunities.length; i++) {
+//                 let scenicOpportunity = scenicOpportunities[i];
+//                 let status = scenicOpportunity.status;
+//                 let statusName = scenicOpportunity.status_name;
+//                 let opportunityName = scenicOpportunity.name;
+//                 let id = scenicOpportunity.opportunity_id;
+//                 let client = scenicOpportunity.client;
+//                 let opportunityItems = scenicOpportunity.items;
+//                 const num_of_carpenters = scenicOpportunity.custom_input['num_of_carpenters']
+//                 const grand_total_hrs = scenicOpportunity.totals['grand_total'] / 2
+//                 const prev_grand_total_hrs = scenicOpportunity.totals['previous_grand_total'] / 2
 
-                // Check if the opportunity items are in the active products list
-                let itemNameArray = confirmItemsExistInActiveProducts(opportunityItems, activeProducts);
+//                 // Calculate the total quantity of half hours for each item and convert to hours
+//                 let scenicCalcArray = calculateScenicCalcItemQuantity(opportunityItems);
 
-                // Calculate the total quantity of half hours for each item and convert to hours
-                let scenicCalcArray = calculateScenicCalcItemQuantity(itemNameArray);
+//                 // Create the carpenters input field
+//                 let carpentersInput = createCarpentersInputField(id, num_of_carpenters);
+//                 let carpentersInputValue = carpentersInput.inputValue;
+//                 let carpentersInputField = carpentersInput.inputField;
 
-                // Create the carpenters input field
-                let carpentersInput = createCarpentersInputField(id);
-                let carpentersInputValue = carpentersInput.inputValue;
-                let carpentersInputField = carpentersInput.inputField;
+//                 // Create the include weekends checkbox
+//                 let weekendsInput = createWeekendCheckbox(id);
+//                 let includeWeekends = weekendsInput.includeWeekends;
 
-                // Create the include weekends checkbox
-                let weekendsInput = createWeekendCheckbox(id);
-                let includeWeekends = weekendsInput.includeWeekends;
+//                 // Get the number of working days from the total hours of the opportunity
+//                 let workingDays = calculateWorkingDays(grand_total_hrs, carpentersInputValue);
 
-                // Get the total number of hours from the scenic calc array
-                let totalHours = calculateTotalHours(scenicCalcArray);
+//                 // Set the start date and time
+//                 const dateAndTime = setOpportunityDateAndTime(scenicOpportunity);
+//                 const startDate = dateAndTime.startDate;
+//                 const startTime = dateAndTime.startTime;
 
-                // Get the number of working days from the total hours of the opportunity
-                let workingDays = calculateWorkingDays(totalHours, carpentersInputValue);
+//                 // Set the opportunity type
+//                 const opportunityType = setOpportunityType(scenicOpportunity);
 
-                // Set the start date and time
-                let dateAndTime = setOpportunityDateAndTime(scenicOpportunity);
-                let startDate = dateAndTime.startDate;
-                let startTime = dateAndTime.startTime;
+//                 // Create the opportunity element object
+//                 opportunityElement = {
+//                     'id': id,
+//                     'opportunityName': opportunityName,
+//                     'client': client,
+//                     'startDate': startDate,
+//                     'startTime': startTime,
+//                     'status': status,
+//                     'statusName': statusName,
+//                     'numberOfCarpenters': carpentersInputValue,
+//                     'carpentersInputField': carpentersInputField,
+//                     'includeWeekends': includeWeekends,
+//                     'totalHours': grand_total_hrs,
+//                     'workingDays': workingDays,
+//                     'scenicCalcArray': scenicCalcArray,
+//                     'opportunityType': opportunityType
+//                 };
 
-                // Set the opportunity type
-                let opportunityType = setOpportunityType(scenicOpportunity);
-
-                // Create the opportunity element object
-                opportunityElement = {
-                    'id': id,
-                    'opportunityName': opportunityName,
-                    'client': client,
-                    'startDate': startDate,
-                    'startTime': startTime,
-                    'status': status,
-                    'statusName': statusName,
-                    'numberOfCarpenters': carpentersInputValue,
-                    'carpentersInputField': carpentersInputField,
-                    'includeWeekends': includeWeekends,
-                    'totalHours': totalHours,
-                    'workingDays': workingDays,
-                    'scenicCalcArray': scenicCalcArray,
-                    'opportunityType': opportunityType
-                };
-
-                // Append the opportunity element to the opportunityElements array
-                opportunityElements.push(opportunityElement);
-            }
-            return opportunityElements;
-        }
-    } catch (error) {
-        console.error('Error in getOpportunityElementObjects:', error);
-        const errorMsgDiv = document.querySelector('#api-error-msg');
-        const errorMsg = document.createElement('p');
-        errorMsg.textContent = 'An error occurred while running the getOpportunityElementObjects function when attempting to get the opportunity element objects: ' + error;
-        errorMsgDiv.appendChild(errorMsg);
-        return [];
-    }
-}
+//                 // Append the opportunity element to the opportunityElements array
+//                 opportunityElements.push(opportunityElement);
+//             }
+//             return opportunityElements;
+//         }
+//     } catch (error) {
+//         console.error('Error in getOpportunityElementObjects:', error);
+//         const errorMsgDiv = document.querySelector('#api-error-msg');
+//         const errorMsg = document.createElement('p');
+//         errorMsg.textContent = 'An error occurred while running the getOpportunityElementObjects function when attempting to get the opportunity element objects: ' + error;
+//         errorMsgDiv.appendChild(errorMsg);
+//         return [];
+//     }
+// }
 
 /**
  * Function to compare the scenic calc arrays and total hours and working days
@@ -1048,29 +1300,29 @@ function getOpportunityElementObjects(opportunityData) {
  * @param {object} previousOpportunityElement - The previous opportunity element object
  */
 function compareScenicCalcModals(currentOpportunityElement, startBuildDate, previousOpportunityElement) {
+    const id = currentOpportunityElement.opportunity_id;
     // Assign the scenic calc arrays
-    let currentScenicCalcArray = currentOpportunityElement.scenicCalcArray;
-    
+    const currentScenicCalcArray = currentOpportunityElement.items;
     
     // Check if there is previous data
     if (previousOpportunityElement) {
-        let previousScenicCalcArray = previousOpportunityElement.scenicCalcArray;
+        const previousScenicCalcArray = previousOpportunityElement.items;
 
         // Create a div to display the Scenic Calc items
-        let scenicCalcDiv = document.createElement('div');
+        const scenicCalcDiv = document.createElement('div');
         scenicCalcDiv.classList.add('card-text');
         
         // Iterate through the scenic calc arrays and compare the quantities
-        for (let k = 0; k < currentScenicCalcArray.length; k++) {
-            let currentScenicCalcName = currentScenicCalcArray[k].name;
-            let currentScenicCalcQuantity = currentScenicCalcArray[k].quantity;
+        for (let i = 0; i < currentScenicCalcArray.length; i++) {
+            const currentScenicCalcName = currentScenicCalcArray[i].name;
+            const currentScenicCalcQuantity = currentScenicCalcArray[i].item_total;
             let matchFound = false;
             let scenicCalcP = document.createElement('p');
             scenicCalcP.classList.add('position-relative');
-            for (let l =0; l < previousScenicCalcArray.length; l++) {
-                let previousScenicCalcName = previousScenicCalcArray[l].name;
-                let previousScenicCalcQuantity = previousScenicCalcArray[l].quantity;
-                let quantityDifference = currentScenicCalcQuantity - previousScenicCalcQuantity;
+            for (let j =0; j < previousScenicCalcArray.length; j++) {
+                const previousScenicCalcName = previousScenicCalcArray[j].name;
+                const previousScenicCalcQuantity = previousScenicCalcArray[j].item_total;
+                const quantityDifference = currentScenicCalcQuantity - previousScenicCalcQuantity;
                 if (currentScenicCalcName === previousScenicCalcName) {
                     matchFound = true;
                     if (currentScenicCalcQuantity > previousScenicCalcQuantity) {
@@ -1101,11 +1353,11 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
         }
 
         // Get the total hours and working days from the opportunity elements
-        let previousTotalHours = previousOpportunityElement.totalHours;
-        let currentTotalHours = currentOpportunityElement.totalHours;
-        let previousWorkingDays = previousOpportunityElement.workingDays;
-        let currentWorkingDays = currentOpportunityElement.workingDays;
-        let workingDaysDifference = currentWorkingDays - previousWorkingDays;
+        const previousTotalHours = previousOpportunityElement.totals["grand_total"];
+        const currentTotalHours = currentOpportunityElement.totals["grand_total"];
+        const previousWorkingDays = previousOpportunityElement.custom_input["working_days"];
+        const currentWorkingDays = currentOpportunityElement.custom_input["working_days"];
+        const workingDaysDifference = currentWorkingDays - previousWorkingDays;
 
         // Add the total hours and working days to the Scenic Calc div
         let totalHoursP = document.createElement('p');
@@ -1124,17 +1376,39 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
             totalHoursP.innerHTML = `<span class="bold-text">Total:</span> ${currentTotalHours} hours / ${currentWorkingDays} days`;
         }
 
+        const previousNumOfCarpenters = previousOpportunityElement.custom_input["previous_num_of_carpenters"];
+        const currentNumOfCarpenters = currentOpportunityElement.custom_input["num_of_carpenters"]
+        const numOfCarpentersDiff = currentNumOfCarpenters - previousNumOfCarpenters;
+        let numOfCarpentersP = document.createElement('p');
+        if (currentNumOfCarpenters > previousNumOfCarpenters) {
+            numOfCarpentersP.innerHTML = `<span class="bold-text">Number of Carpenters:</span><span id="num-of-carpenters-${id}"> ${currentNumOfCarpenters}</span>
+                <span class="position-absolute top-0 end-0 badge rounded-pill bg-danger click-display-none">
+                    <span>+${numOfCarpentersDiff} days</span>
+                </span>`;
+        } else if (currentNumOfCarpenters < previousNumOfCarpenters) {
+            numOfCarpentersP.innerHTML = `<span class="bold-text">Number of Carpenters:</span><span id="num-of-carpenters-${id}"> ${currentNumOfCarpenters}</span>
+                <span class="position-absolute top-0 end-0 badge rounded-pill bg-success click-display-none">
+                    <span>${numOfCarpentersDiff} days</span>
+                </span>`;
+        } else {
+            numOfCarpentersP.innerHTML = `<span class="bold-text">Number of Carpenters:</span><span id="num-of-carpenters-${id}"> ${currentNumOfCarpenters}</span>`;
+        }
+
         // Set the remaining current opportunity elements
-        let currentClientName = currentOpportunityElement.client;
-        let currentStartDate = currentOpportunityElement.startDate;
-        let currentStartTime = currentOpportunityElement.startTime;
-        let currentStatusName = currentOpportunityElement.statusName;
+        const currentClientName = currentOpportunityElement.client;
+        const currentStartDate = currentOpportunityElement.custom_input["date_out"];
+        const currentStartTime = currentOpportunityElement.custom_input["time_out"];
+        const currentStatusName = currentOpportunityElement.status_name;
+        const currentIncludeWeekends = currentOpportunityElement.custom_input["include_weekends"] === true ? "Yes" : "No";
+        const currentPlannedFinishDate = currentOpportunityElement.custom_input["planned_finish_date"] || "N/A";
     
         // Set the remaining previous opportunity elements
-        let previousClientName = previousOpportunityElement.client;
-        let previousStartDate = previousOpportunityElement.startDate;
-        let previousStartTime = previousOpportunityElement.startTime;
-        let previousStatusName = previousOpportunityElement.statusName;
+        const previousClientName = previousOpportunityElement.client;
+        const previousStartDate = previousOpportunityElement.custom_input["date_out"];
+        const previousStartTime = previousOpportunityElement.custom_input["time_out"];
+        const previousStatusName = previousOpportunityElement.status_name;
+        const previousIncludeWeekends = previousOpportunityElement.custom_input["include_weekends"] === true ? "Yes" : "No";
+        const previousPlannedFinishDate = previousOpportunityElement.custom_input["planned_finish_date"] || "N/A";
 
         // Get the modal body element
         let modalBody = document.querySelector('#scenicCalcModal .modal-body');
@@ -1145,33 +1419,52 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
         // If the client name has changed, update the element styling
         let clientP;
         if (currentClientName !== previousClientName) {
-            clientP = updatedModalElements('Client', currentClientName);
+            clientP = updatedModalElements('Client', `client-name-${id}`, currentClientName);
         } else {
-            clientP = additionalContent('Client', currentClientName);
+            clientP = additionalContent('Client', `client-name-${id}`, currentClientName);
         }
 
         // If the start date or start time has changed, update the element styling
         let dateOutP;
         if (currentStartDate !== previousStartDate || currentStartTime !== previousStartTime) {
-            dateOutP = updatedModalElements('Date Out', currentStartDate, currentStartTime);
+            dateOutP = updatedModalElements('Date Out', `date-out-${id}`, currentStartDate, currentStartTime);
         } else {
-            dateOutP = additionalContent('Date Out', currentStartDate, currentStartTime);
+            dateOutP = additionalContent('Date Out', `date-out-${id}`, currentStartDate, currentStartTime);
         }
 
-        let startBuildDateP = additionalContent('Start Build Date', startBuildDate);
+        let startBuildDateP = additionalContent('Start Build Date', `start-build-date-${id}`, startBuildDate);
 
         // If the status has changed, update the element styling
         let statusP;
         if (currentStatusName !== previousStatusName) {
-            statusP = updatedModalElements('Status', currentStatusName);
+            statusP = updatedModalElements('Status', `status-${id}`, currentStatusName);
         } else {
-            statusP = additionalContent('Status', currentStatusName);
+            statusP = additionalContent('Status', `status-${id}`, currentStatusName);
+        }
+
+        // If the include weekends has changed, update the element styling
+        let includeWeekendsP;
+        if (currentIncludeWeekends !== previousIncludeWeekends) {
+            includeWeekendsP = updatedModalElements('Include Weekends', `include-weekends-${id}`, currentIncludeWeekends);
+        } else {
+            includeWeekendsP = additionalContent('Include Weekends', `include-weekends-${id}`, currentIncludeWeekends);
+        }
+
+        // If the planned finish date has changed, update the element styling
+        let plannedFinishDateP;
+        if (currentPlannedFinishDate !== previousPlannedFinishDate) {
+            plannedFinishDateP = updatedModalElements('Planned Finish Date', `planned-finish-date-${id}`, currentPlannedFinishDate);
+        } else {
+            plannedFinishDateP = additionalContent('Planned Finish Date', `planned-finish-date-${id}`, currentPlannedFinishDate);
         }
     
         // Append the elements to the modal body
         modalBody.appendChild(clientP);
         modalBody.appendChild(dateOutP);
         modalBody.appendChild(startBuildDateP);
+        modalBody.appendChild(plannedFinishDateP);
+        modalBody.appendChild(includeWeekendsP);
+        modalBody.appendChild(numOfCarpentersP);
         modalBody.appendChild(statusP);
         modalBody.appendChild(scenicCalcDiv);
         modalBody.appendChild(totalHoursP);
@@ -1185,16 +1478,16 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
 /**
  * Function to update styling on updated modal elements
  */
-function updatedModalElements(string, content, contentTwo=null) {
+function updatedModalElements(string, idString, content, contentTwo=null) {
     let contentP = document.createElement('p');
     contentP.classList.add('position-relative');
     if (contentTwo) {
-        contentP.innerHTML = `<span class="bold-text">${string}:</span> ${content}, ${contentTwo}
+        contentP.innerHTML = `<span class="bold-text">${string}:</span><span id="${idString}"> ${content}, ${contentTwo}</span>
         <span class="position-absolute top-0 end-0 p-2 bg-info border border-light rounded-circle click-display-none">
             <span class="visually-hidden">New alerts</span>
         </span>`;
     } else {
-        contentP.innerHTML = `<span class="bold-text">${string}:</span> ${content}
+        contentP.innerHTML = `<span class="bold-text">${string}:</span><span id="${idString}"> ${content}</span>
         <span class="position-absolute top-0 end-0 p-2 bg-info border border-light rounded-circle click-display-none">
             <span class="visually-hidden">New alerts</span>
         </span>`;
@@ -1210,53 +1503,39 @@ function updatedModalElements(string, content, contentTwo=null) {
  * @param {object} button - The button element
  * @returns {object} - The div element and input field value
  */
-function createCarpentersInputField(id, totalHours=null, button=null) {
+async function createCarpentersInputField(opportunity, totalHours=null, button=null, customInputData=null) {
+    const id = opportunity.opportunity_id
+
     // Create a div to hold the input field
     let numCarpentersDiv = document.createElement('div');
     numCarpentersDiv.classList.add('mb-1');
 
-    // Load the number of carpenters from local storage
-    let savedCarpenters = localStorage.getItem(`carpenters-${id}`);
-
-    // Create the label and input field
+    // Create the label
     let numCarpentersLabel = document.createElement('label');
     numCarpentersLabel.htmlFor = `carpenters-${id}`;
     numCarpentersLabel.classList.add('text-white', 'me-1');
     numCarpentersLabel.textContent = 'No. of Carpenters';
+
+    // Create the input
     let numCarpentersInput = document.createElement('input');
     numCarpentersInput.type = 'number';
     numCarpentersInput.id = `carpenters-${id}`;
     numCarpentersInput.name = `carpenters-${id}`;
     numCarpentersInput.min = '1';
     numCarpentersInput.max = '20';
-    numCarpentersInput.value = '1';
+    numCarpentersInput.value = '';
 
-    // Check if there is a saved value for the number of carpenters
-    if (savedCarpenters !== null && !isNaN(savedCarpenters)) {
-        numCarpentersInput.value = savedCarpenters;
-    }
+    const savedValue = customInputData ? customInputData.num_of_carpenters : opportunity.custom_input?.num_of_carpenters;
 
-    // Add an event listener to save the value whenever the input field changes
-    numCarpentersInput.addEventListener('input', function() {
-        let value = Number(numCarpentersInput.value);
-        // Make sure the value is not less than 1 or greater than 20
-        if (value < 1) {
-            numCarpentersInput.value = 1;
-        } else if (value > 20) {
-            numCarpentersInput.value = 20;
-        }
+    // Apply a default if none found
+    numCarpentersInput.value = savedValue ?? 1;
+    // const value = Number(numCarpentersInput.value);
 
-        // Save the value to local storage
-        localStorage.setItem(`carpenters-${id}`, numCarpentersInput.value);
-
-        if (totalHours && button) {
-            // Recalculate the working days
-            let workingDays = calculateWorkingDays(totalHours, Number(numCarpentersInput.value));
-    
-            // Update the button text
-            button.textContent = `Total: ${totalHours} hours / ${workingDays} days`;
-        }
-    })
+    // if (totalHours && button) {
+    //     // Recalculate the working days and update button text
+    //     const workingDays = !customInputData ? await calculateWorkingDays(id, totalHours, value) : await calculateWorkingDays(id, totalHours, value, true);
+    //     button.textContent = `Total: ${totalHours} hours / ${workingDays} days`;
+    // }
 
     // Append the label and input field to the div
     numCarpentersDiv.appendChild(numCarpentersLabel);
@@ -1268,6 +1547,47 @@ function createCarpentersInputField(id, totalHours=null, button=null) {
         'inputField': numCarpentersInput,
         'inputValue': numCarpentersInput.value
     };
+}
+
+async function updateCarpenters(opportunity, input) {
+    const {
+        opportunity_id: id,
+        totals: {grand_total: totalHours} = {},
+        custom_input: { date_out: startDate } = {},
+        custom_input: { planned_finish_date: plannedFinish } = {},
+        custom_input: { include_weekends: includeWeekends} = {},
+    } = opportunity;
+    let value = Number(input.value);
+    if (value < 1) value = 1;
+    if (value > 20) value = 20;
+
+    // Recalculate the working days
+    const workingDays = await calculateWorkingDays(totalHours, value);
+
+    const startBuildDate = plannedFinish ? createStartBuildDate(workingDays, plannedFinish, includeWeekends, true) : createStartBuildDate(workingDays, startDate, includeWeekends);
+
+    try {
+        const response = await fetch(`/workload/opportunities/${id}/custom_input/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                num_of_carpenters: value,
+                working_days: workingDays,
+                start_build_date: startBuildDate,
+            })
+        });
+
+        if (!response.ok) {
+            console.error(`Failed to update num_of_carpenters for opportunity ${id}`)
+        }
+
+        return response;
+    } catch (err) {
+        console.error('Error updating num_of_carpenters:', err);
+    }
 }
 
 /**
@@ -1450,29 +1770,25 @@ function setSiblingInnerHTML(startDate, dateOut, currentOpportunityName=null) {
  * @param {number} id - The opportunity ID
  * @returns {object} - The checkbox div element and the include weekends input field
  */
-function createWeekendCheckbox(id) {
-    let weekendDiv = document.createElement('div');
+async function createWeekendCheckbox(opportunity, customInputData=null) {
+    const id = opportunity.opportunity_id
+    const weekendDiv = document.createElement('div');
     weekendDiv.classList.add('weekends-checkbox', 'mb-1');
-    let weekendLabel = document.createElement('label');
+
+    const weekendLabel = document.createElement('label');
     weekendLabel.htmlFor = `weekends-${id}`;
     weekendLabel.classList.add('text-white', 'me-1');
     weekendLabel.textContent = 'Include Weekends';
-    let weekendInput = document.createElement('input');
+
+    const weekendInput = document.createElement('input');
     weekendInput.type = 'checkbox';
     weekendInput.id = `weekends-${id}`;
     weekendInput.name = `weekends-${id}`;
     weekendInput.value = 'weekends';
 
-    // Load the weekend value from local storage
-    let savedState = localStorage.getItem(`weekends-${id}`);
-    if (savedState === 'true' || savedState === 'false') {
-        weekendInput.checked = savedState === 'true';
-    }
-
-    // Save the checkbox state to local storage whenever the input field changes
-    weekendInput.addEventListener('change', function() {
-        localStorage.setItem(`weekends-${id}`, this.checked);
-    });
+    const savedState = customInputData ? customInputData.include_weekends : opportunity.custom_input?.include_weekends;
+    
+    weekendInput.checked = savedState === true;
 
     weekendDiv.appendChild(weekendLabel);
     weekendDiv.appendChild(weekendInput);
@@ -1483,6 +1799,41 @@ function createWeekendCheckbox(id) {
     };
 }
 
+async function updateWeekendsInput(opportunity, newState) {
+    // const opportunityId = opportunity.opportunity_id;
+    const {
+        opportunity_id: opportunityId,
+        custom_input: { date_out: startDate } = {},
+        custom_input: { planned_finish_date : plannedFinish } = {},
+        custom_input: { working_days: workingDays } = {},
+    } = opportunity;
+    console.log(plannedFinish);
+
+    const startBuildDate = plannedFinish ? createStartBuildDate(workingDays, plannedFinish, newState, true) : createStartBuildDate(workingDays, startDate, newState);
+
+    try {
+        const response = await fetch(`/workload/opportunities/${opportunityId}/custom_input/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'appilcation/json',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            body: JSON.stringify({
+                include_weekends: newState,
+                start_build_date: startBuildDate,
+            }),
+        });
+
+        if (!response.ok) {
+            console.error(`Failed to update include_weekends for opportunity ${opportunityId}`);
+        }
+
+        return response;
+    } catch (err) {
+        console.error('Error updating include_weekends:', err);
+    }
+}
+
 /**
  * Function to create a start build date for the opportunity
  * @param {number} workingsDays - The number of working days
@@ -1490,7 +1841,7 @@ function createWeekendCheckbox(id) {
  * @param {boolean} includeWeekends - The include weekends boolean
  * @returns {object} - The start build date
  */
-function createStartBuildDate(workingDays, dateOut, includeWeekends, id) {
+function createStartBuildDate(workingDays, dateOut, includeWeekends, plannedFinish = false) {
     if (isNaN(Date.parse(dateOut))) {
         console.error('Invalid input to createStartBuildDate: dateOut must be a valid date');
         const errorMsgDiv = document.querySelector('#api-error-msg');
@@ -1510,7 +1861,7 @@ function createStartBuildDate(workingDays, dateOut, includeWeekends, id) {
     }
 
     let startBuildDate = new Date(dateOut);
-    workingDays = Math.ceil(workingDays);  //round up to the nearest whole number
+    workingDays = plannedFinish ? Math.ceil(workingDays) - 1 : Math.ceil(workingDays);  //round up to the nearest whole number
 
     if (!includeWeekends) {
         while (workingDays > 0) {
@@ -1523,8 +1874,6 @@ function createStartBuildDate(workingDays, dateOut, includeWeekends, id) {
     } else {
         startBuildDate.setDate(startBuildDate.getDate() - workingDays);
     }
-    // Save the start build date to local storage
-    localStorage.setItem(`start-build-date-${id}`, startBuildDate.toISOString());
 
     startBuildDate = startBuildDate.toISOString().split('T')[0];
 
@@ -1685,19 +2034,19 @@ function getLastDayOfMonth(dateString) {
  * @returns {string|null} - The ID of the earliest visible `<td>` element in the same row, or `null` if none are found.
  */
 function getEarliestVisibleDate(dateString) {
-    let targetTd = document.getElementById(dateString);
+    const targetTd = document.getElementById(dateString);
     if (!targetTd) {
         console.error("Could not find the target <td> element:", targetTd);
         return null;
     }
 
-    let row = targetTd.closest("tr");
+    const row = targetTd.closest("tr");
     if (!row) {
         console.error("Could not find the parent row");
         return null;
     }
 
-    let cells = row.getElementsByClassName("cell-border");
+    const cells = row.getElementsByClassName("cell-border");
 
     for (let cell of cells) {
         if (!cell.classList.contains("display-none")) {
@@ -1737,7 +2086,13 @@ function isDateVisible(dateString, dateStringTwo) {
  * @returns {Array} A new array of opportunities sorted from the earliest to the latest start date.
  */
 function sortOpportunitiesByStartDate(opportunities) {
-    return opportunities.slice().sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+    for (let i = 0; i < opportunities.length; i++) {
+        const opportunity = opportunities[i];
+        const tempDateOut = opportunity.custom_input["planned_finish_date"] ? opportunity.custom_input["planned_finish_date"] : opportunity.custom_input["date_out"];
+        opportunity.custom_input["temp_date_out"] = tempDateOut;
+    }
+
+    return opportunities.slice().sort((a, b) => new Date(a.custom_input["temp_date_out"]) - new Date(b.custom_input["temp_date_out"]));
 }
 
 /**
@@ -1753,7 +2108,7 @@ function sortOpportunitiesByStartDate(opportunities) {
  * @param {boolean} [includeWeekends=false] - Whether to include weekends as working days.
  * @returns {Array<Object>} An array of objects, each containing a date and the carpenters data.
  */
-function calculateDailyCarpenters(startBuildDate, dateOut, carpenters, includeWeekends=false) {
+function calculateDailyCarpenters(startBuildDate, dateOut, carpenters, includeWeekends = false, pfd = false) {
     const startDate = new Date(startBuildDate);
     const endDate = new Date(dateOut);
     const cells = document.getElementsByClassName('cell-border');
@@ -1761,16 +2116,30 @@ function calculateDailyCarpenters(startBuildDate, dateOut, carpenters, includeWe
 
     for (const cell of cells) {
         const cellDate = new Date(cell.id);
-        if (cellDate >= startDate && cellDate < endDate) {
-            const cellDateStr = cell.id
-            const day = cellDate.getDay();
-            const isWeekend = day === 0 || day === 6;
+        if (pfd) {
+            if (cellDate >= startDate && cellDate <= endDate) {
+                const cellDateStr = cell.id
+                const day = cellDate.getDay();
+                const isWeekend = day === 0 || day === 6;
 
-            if (!includeWeekends && isWeekend) {
-                    continue;
-            } 
-            
-            workingDays.push(cellDateStr);
+                if (!includeWeekends && isWeekend) {
+                        continue;
+                } 
+                
+                workingDays.push(cellDateStr);
+            }
+        } else {
+            if (cellDate >= startDate && cellDate < endDate) {
+                const cellDateStr = cell.id
+                const day = cellDate.getDay();
+                const isWeekend = day === 0 || day === 6;
+    
+                if (!includeWeekends && isWeekend) {
+                        continue;
+                } 
+                
+                workingDays.push(cellDateStr);
+            }
         }
     }
 
@@ -1846,4 +2215,123 @@ function removeDailyCarpenters(carpentersPerDay) {
         }
         
     }
+}
+
+function getCSRFToken() {
+    let cookieValue = null;
+    const name = "csrftoken";
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function getDateRange(startDate, endDate) {
+    const dates = [];
+    let current = new Date(startDate);
+    const end = new Date(endDate);
+
+    while (current <= end) {
+        const yyyy = current.getFullYear();
+        const mm = String(current.getMonth() + 1).padStart(2, '0');
+        const dd = String(current.getDate()).padStart(2, '0');
+        dates.push(`${yyyy}-${mm}-${dd}`);
+        current.setDate(current.getDate() + 1);
+    }
+
+    return dates;
+}
+
+function renderOpportunityAcrossCells(opportunityDiv, startBuildDate, dateOut, rowClass) {
+    const dateRange = getDateRange(startBuildDate, dateOut);
+
+    dateRange.forEach((date, index) => {
+        const cell = document.getElementById(date);
+        if (!cell) return;
+
+        const segment = opportunityDiv.cloneNode(true);
+        segment.classList.add(rowClass, 'opportunity-segment');
+
+        // Style the ends
+        if (index === 0) {
+            segment.classList.add('rounded-start');
+        } else if (index === dateRange.length - 1) {
+            segment.classList.add('rounded-end');
+        } else {
+            segment.classList.add('flat-middle');
+        }
+
+        cell.appendChild(segment);
+    })
+}
+
+function createPreviousOpportunityObjects(opportunityObjects) {
+    const previousOpportunities = [];
+
+    for (let i = 0; i < opportunityObjects.length; i++) {
+        const opportunity = opportunityObjects[i];
+        const oppItems = opportunity.items;
+        const items = [];
+        for (let j = 0; j < oppItems.length; j++) {
+            const item = {
+                "current_item_id": oppItems[j].current_item_id,
+                "name": oppItems[j].name,
+                "item_total": oppItems[j].previous_item_total,
+                "updated_at": oppItems[j].item_previously_updated_at,
+            };
+
+            items.push(item);
+        }
+
+        const previousOpportunity = {
+            "opportunity_id": opportunity.opportunity_id,
+            "name": opportunity.previous_name,
+            "client": opportunity.client,
+            "status_name": opportunity.previous_status_name,
+            "custom_input": {
+                "date_out": opportunity.custom_input["previous_date_out"],
+                "time_out": opportunity.custom_input["previous_time_out"],
+                "working_days": opportunity.custom_input["previous_working_days"],
+                "include_weekends": opportunity.custom_input["previous_include_weekends"],
+                "planned_finish_date": opportunity.custom_input["previous_planned_finish_date"],
+                "num_of_carpenters": opportunity.custom_input["previous_num_of_carpenters"],
+                "updated_at": opportunity.custom_input["previously_updated_at"],
+            },
+            "items": items,
+            "totals": {
+                "grand_total": opportunity.totals["previous_grand_total"],
+            }
+        };
+
+        previousOpportunities.push(previousOpportunity);
+    }
+
+    return previousOpportunities;
+}
+
+function showMessageModal(message) {
+    const modalEl = document.getElementById('messageModal');
+    const modalText = document.getElementById('messageText');
+    modalText.textContent = message;
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+};
+
+function getOppIds(oppData) {
+    const oppIds = [];
+    for (let i = 0; i < oppData.length; i++) {
+        const oppId = oppData[i].opportunity_id;
+        oppIds.push(oppId);
+    }
+
+    console.log(oppIds);
+    return oppIds;
 }
