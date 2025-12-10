@@ -137,6 +137,22 @@
       {% endblock %}
     </div>
 
+    <div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-3">
+
+          <div class="modal-body">
+            <span id="messageText"></span>
+          </div>
+
+          <div class="modal-footer border-0 justify-content-center">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
     {% block postloadjs %}
     {% endblock %}
 </body>

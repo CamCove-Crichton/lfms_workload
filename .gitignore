@@ -11,6 +11,7 @@ cloudinary_python.txt
 db.sqlite3
 heroku_config_backup.txt
 myenv/
+.DS_Store
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
