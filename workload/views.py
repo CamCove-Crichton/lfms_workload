@@ -1,10 +1,15 @@
 import os
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.views import View
 from django.http import JsonResponse, QueryDict
 from django_celery_results.models import TaskResult
+from django.utils import timezone
+from django.db.models.functions import Coalesce
+
+from datetime import timedelta
+from decimal import Decimal
 import json
 import logging
 from .tasks import fetch_workshop_workload
@@ -15,6 +20,7 @@ from .utils import (
     date_check,
     fetch_workload_data,
 )
+from .models import Opportunity, CustomInput, ScenicCalcItems
 
 logger = logging.getLogger(__name__)
 
@@ -102,18 +108,166 @@ def api_workload(request: QueryDict):
 
 
 def get_workshop_workload_data(request):
-    """A view to get the latest workload result from the database"""
-    latest_result = TaskResult.objects.all().order_by('-date_done').first()
+    """A view to get the latest workload result from the database in the next 91 days"""
 
-    if not latest_result or not latest_result.result:
-        return JsonResponse({'error': 'No result found'}, status=404)
+    today = timezone.now().date()
+    future_date = today + timedelta(days=91)
+
+    opportunities = (
+        Opportunity.objects.annotate(
+            effective_start = Coalesce("load_starts_at", "deliver_starts_at", "starts_at")
+        ).filter(
+            effective_start__range=[today, future_date]
+        ).prefetch_related(
+            "scenic_calc_items", "tags", "client", "owner", "venue", "custom_input"
+        ).order_by("effective_start")
+    )
+
+    data = []
+    for opp in opportunities:
+        items = []
+        tags = [tag.name for tag in opp.tags.all()]
+
+        for sci in opp.scenic_calc_items.all():
+            items.append({
+                "current_item_id": sci.current_item_id,
+                "name": sci.name,
+                "item_total": float(sci.item_total or 0),
+                "previous_item_total": float(sci.previous_item_total or 0),
+                "item_updated_at": sci.updated_at.isoformat() if sci.updated_at else None,
+                "item_previously_updated_at": sci.previously_updated_at.isoformat() if sci.previously_updated_at else None,
+            })
+
+        data.append({
+            "opportunity_id": opp.current_id,
+            "name": opp.opportunity_name,
+            "previous_name": opp.previous_opportunity_name,
+            "client": opp.client.name,
+            "owner": opp.owner.name,
+            "venue": opp.venue.name if opp.venue else None,
+            "order_number": opp.order_number,
+            "status": opp.status,
+            "status_name": opp.status_name,
+            "previous_status_name": opp.previous_status_name,
+            "dry_hire": opp.dry_hire,
+            "dry_hire_transport": opp.dry_hire_transport,
+            "starts_at": opp.starts_at,
+            "ends_at": opp.ends_at,
+            "load_starts_at": opp.load_starts_at,
+            "deliver_starts_at": opp.deliver_starts_at,
+            "setup_starts_at": opp.setup_starts_at,
+            "show_starts_at": opp.show_starts_at,
+            "tags": tags,
+            "opp_updated_at": opp.updated_at,
+            "items": items,
+            "custom_input": {
+                "include_weekends": opp.custom_input.include_weekends,
+                "previous_include_weekends": opp.custom_input.previous_include_weekends,
+                "num_of_carpenters": opp.custom_input.num_of_carpenters,
+                "previous_num_of_carpenters": opp.custom_input.previous_num_of_carpenters,
+                "planned_finish_date": opp.custom_input.planned_finish_date,
+                "previous_planned_finish_date": opp.custom_input.previous_planned_finish_date,
+                "built": opp.custom_input.built,
+                "updated_at": opp.custom_input.updated_at,
+                "previously_updated_at": opp.custom_input.previously_updated_at,
+                "working_days": float(opp.custom_input.working_days or 0),
+                "previous_working_days": float(opp.custom_input.previous_working_days or 0),
+                "date_out": opp.custom_input.date_out,
+                "previous_date_out": opp.custom_input.previous_date_out,
+                "time_out": opp.custom_input.time_out.strftime("%H:%M") if opp.custom_input.time_out else None,
+                "previous_time_out":opp.custom_input.previous_time_out.strftime("%H:%M") if opp.custom_input.previous_time_out else None,
+                "start_build_date": opp.custom_input.start_build_date,
+            },
+            "totals": {
+                "grand_total": float(opp.scenic_calc_total.grand_total or 0),
+                "previous_grand_total": float(opp.scenic_calc_total.previous_grand_total or 0),
+            },
+        })
     
-    try:
-        data = json.loads(latest_result.result)
-    except (TypeError, ValueError):
-        return JsonResponse({'error': 'Invalid result format'}, status=500)
+    return JsonResponse({"result": data})
 
-    return JsonResponse({'result': data})
+
+def custom_input(request, current_id):
+    """A view to handle retrieving or saving data for the opportunity custom inputs"""
+    opportunity = get_object_or_404(Opportunity, current_id=current_id)
+
+    if request.method == "POST":
+        data = json.loads(request.body.decode("utf-8"))
+        input_obj, _ = CustomInput.objects.get_or_create(
+            opportunity=opportunity,
+            defaults={
+                "num_of_carpenters": 1,
+                "include_weekends": False,
+                "planned_finish_date": None,
+                "built": False,
+            }
+        )
+
+        updated_fields = {}
+
+        if "num_of_carpenters" in data:
+            input_obj.num_of_carpenters = data["num_of_carpenters"]
+            updated_fields["num_of_carpenters"] = data["num_of_carpenters"]
+        if "include_weekends" in data:
+            input_obj.include_weekends = data["include_weekends"]
+            updated_fields["include_weekends"] = data["include_weekends"]
+        if "planned_finish_date" in data:
+            input_obj.planned_finish_date = data["planned_finish_date"]
+            updated_fields["planned_finish_date"] = data["planned_finish_date"]
+        if "built" in data:
+            input_obj.built = data["built"]
+            updated_fields["built"] = data["built"]
+        if "working_days" in data:
+            input_obj.working_days = data["working_days"]
+            updated_fields["working_days"] = data["working_days"]
+        if "start_build_date" in data:
+            input_obj.start_build_date = data["start_build_date"]
+            updated_fields["start_build_date"] = data["start_build_date"]
+        
+        input_obj.save()
+
+        return JsonResponse({
+            "status": "ok",
+            "updated_data": updated_fields,
+        })
+    
+    elif request.method == "GET":
+        input_obj = getattr(opportunity, "custom_input", None)
+
+        if not input_obj:
+            return JsonResponse({
+                "opportunity_id": current_id,
+                "num_of_carpenters": 1,
+                "include_weekends": False,
+                "planned_finish_date": None,
+                "built": False,
+                "updated_at": None,
+                "previously_updated_at": None,
+            })
+        
+        data = {
+            "opportunity_id": current_id,
+            "num_of_carpenters": input_obj.num_of_carpenters,
+            "include_weekends": input_obj.include_weekends,
+            "working_days": input_obj.working_days,
+            "start_build_date": (
+                input_obj.start_build_date.isoformat()
+                if input_obj.start_build_date else None
+            ),
+            "planned_finish_date": (
+                input_obj.planned_finish_date.isoformat()
+                if input_obj.planned_finish_date else None
+            ),
+            "built": input_obj.built,
+            "updated_at": input_obj.updated_at.isoformat(),
+            "previously_updated_at": (
+                input_obj.previously_updated_at.isoformat()
+                if input_obj.previously_updated_at else None
+            ),
+        }
+        return JsonResponse(data)
+    else:
+        return JsonResponse({"error": "Unsupported method"}, status=405)
 
 
 # def start_workshop_workload_task(request):
