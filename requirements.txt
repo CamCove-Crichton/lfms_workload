@@ -13,7 +13,7 @@ cron-descriptor==1.4.5
 cryptography==43.0.1
 defusedxml==0.7.1
 dj-database-url==2.3.0
-Django==5.0.13
+Django==5.1.15
 django-allauth==0.61.1
 django-celery-beat==2.8.1
 django-celery-results==2.5.1
