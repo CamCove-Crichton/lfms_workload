@@ -10,7 +10,7 @@ from .models import (
 class ScenicCalcItemsInline(admin.TabularInline):
     model = ScenicCalcItems
     extra = 0
-    fields = ("name", "item_total", "previous_item_total")
+    fields = ("name", "item_total", "previous_item_total", "is_active")
 
 
 @admin.register(Opportunity)
@@ -24,7 +24,7 @@ class OpportunityAdmin(admin.ModelAdmin):
                        "status", "status_name", "previous_status_name", "dry_hire", "dry_hire_transport", "starts_at",
                        "ends_at", "load_starts_at", "deliver_starts_at", "setup_starts_at",
                        "show_starts_at", "takedown_starts_at", "collect_starts_at", "unload_starts_at",
-                       "tags", "weight_total", "created_at", "updated_at", "previously_updated_at")
+                       "tags", "weight_total", "created_at", "updated_at", "previously_updated_at", "is_active")
         }),
         ("Scenic Totals", {
             "fields": ("scenic_calc_totals",),
@@ -32,11 +32,15 @@ class OpportunityAdmin(admin.ModelAdmin):
     )
 
     def scenic_calc_totals(self, obj):
-        totals = ScenicCalcItems.objects.filter(opportunity=obj).aggregate(
+        totals_active = ScenicCalcItems.objects.filter(opportunity=obj).filter(is_active=True).aggregate(
             total=Sum("item_total"),
             prev_total=Sum("previous_item_total")
         )
-        return f"Grand Total: {totals['total'] or 0} | Previous Grand Total: {totals['prev_total'] or 0}"
+        totals_all = ScenicCalcItems.objects.filter(opportunity=obj).aggregate(
+            total=Sum("item_total"),
+            prev_total=Sum("previous_item_total")
+        )
+        return f"Grand Total (Active Items Only): {totals_active['total'] or 0}, Grand Total (ALL): {totals_all['total'] or 0} | Previous Grand Total (Active Items Only): {totals_active['prev_total'] or 0}, Previous Grand Total (ALL): {totals_all['prev_total'] or 0}"
     
     scenic_calc_totals.short_description = "Scenic Calc Totals"
 

@@ -107,6 +107,7 @@ class Opportunity(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     previously_updated_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.opportunity_name
@@ -124,6 +125,7 @@ class ScenicCalcItems(models.Model):
     previous_item_total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     previously_updated_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"Scenic Calc Items for {self.opportunity}"
@@ -147,6 +149,7 @@ class ScenicCalcItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     previously_updated_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.name} (Qty: {self.quantity})"
@@ -158,6 +161,7 @@ class ScenicCalcTotal(models.Model):
     previous_grand_total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     previously_updated_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
     
     def __str__(self):
         return f"Totals for {self.opportunity}"
