@@ -37,6 +37,7 @@ def fetch_workshop_workload(days):
     logger.info(f"Running Celery Task with days={days}")
     data = fetch_workload_data(days=days)
     
+    seen_opportunity_ids = set()
     opportunities = data.get("opportunities_with_items", [])
     print(f"Total Opportunities: {len(opportunities)}")
 
@@ -115,11 +116,6 @@ def fetch_workshop_workload(days):
             )
         
         # Opportunity
-        # old_opp = Opportunity.objects.filter(current_id=opportunity_data["id"]).first()
-        # old_opp_name = old_opp.opportunity_name if old_opp else None
-        # old_status_name = old_opp.status_name if old_opp else None
-        # old_updated_at = old_opp.updated_at if old_opp else None
-        # previous_updated_at_opp = get_previous_updated_at(Opportunity, {"current_id": opportunity_data["id"]})
         try:
             opportunity, created = update_model_with_history(
                 model=Opportunity,
@@ -154,11 +150,6 @@ def fetch_workshop_workload(days):
                 },
                 previous_fields=["opportunity_name", "status_name"],
             )
-
-            # if not created:
-            #     opportunity.previous_opportunity_name = old_opp_name
-            #     opportunity.previous_status_name = old_status_name
-            #     opportunity.previously_updated_at = old_updated_at
             
             assign_tags(opportunity, opportunity_data.get("tag_list", []))
 
@@ -177,25 +168,35 @@ def fetch_workshop_workload(days):
                 previous_fields=["date_out", "time_out"]
             )
 
-            # opportunity.save()
+            seen_opportunity_ids.add(opportunity.current_id)
+
+            if not opportunity.is_active:
+                opportunity.is_active = True
+                opportunity.save(update_fields=["is_active"])
 
         except Exception as e:
             logger.error(f"Failed to create Opportunity {opportunity_data['id']}: {e}")
             continue
 
-        item_totals = defaultdict(Decimal)
+        item_totals = defaultdict(lambda: Decimal("0"))
         item_names = {}
+        api_item_ids = set()
 
         for item in items:
             current_item_id = item["item_id"]
             name = item["name"].split('-')[0].strip()
             raw_qty = item.get("quantity")
-            current_quantity = Decimal(raw_qty) / 2 if raw_qty is not None else Decimal(0)
+            current_quantity = Decimal(raw_qty) / Decimal("2") if raw_qty is not None else Decimal("0")
             item_totals[current_item_id] += current_quantity
             item_names[current_item_id] = name
-            existing_item = ScenicCalcItem.objects.filter(current_id=item["id"]).first()
+            existing_item = ScenicCalcItem.objects.filter(
+                opportunity_id=item.get("opportunity_id"),
+                current_item_id=current_item_id,
+                is_active=True
+            ).first()
             previous_quantity = existing_item.quantity if existing_item else None
             previous_updated_at_itm = get_previous_updated_at(ScenicCalcItem, {"current_id": item["id"]})
+            api_item_ids.add(item["id"])
 
             # Scenic Calc Individual Items
             try:
@@ -214,10 +215,24 @@ def fetch_workshop_workload(days):
                         "previously_updated_at": previous_updated_at_itm
                     },
                 )
+
+                if not sci_item.is_active:
+                    sci_item.is_active = True
+                    sci_item.save(update_fields=["is_active"])
+
             except Exception as e:
                 logger.error(f"Failed to create ScenicCalcItem for {item['id']}: {e}")
                 continue
         
+        stale_items = ScenicCalcItem.objects.filter(
+            opportunity_id=opportunity.id,
+            is_active=True
+        ).exclude(
+            current_id__in=api_item_ids
+        )
+
+        stale_items.update(is_active=False)
+
         grand_total = Decimal(0)
 
         for current_item_id, total_qty in item_totals.items():
@@ -226,11 +241,25 @@ def fetch_workshop_workload(days):
                 current_item_id != 4977
                 and ActiveProducts.objects.filter(current_id=current_item_id).exists()
             )
+            logger.warning(
+                f"GRAND TOTAL CHECK → "
+                f"item_id={current_item_id}, "
+                f"name={name}, "
+                f"qty={total_qty}, "
+                f"active={ActiveProducts.objects.filter(current_id=current_item_id).exists()}"
+            )
+
             if not is_valid_item:
+                logger.error(
+                    f"❌ SKIPPED FROM TOTAL → "
+                    f"item_id={current_item_id}, "
+                    f"name={name}, "
+                    f"qty={total_qty}"
+                )
                 continue
 
             # Scenic Calc Item totals
-            sci, _ = ScenicCalcItems.objects.get_or_create(
+            sci, sci_created = ScenicCalcItems.objects.get_or_create(
                 opportunity=opportunity,
                 current_item_id=current_item_id,
                 defaults={
@@ -239,33 +268,33 @@ def fetch_workshop_workload(days):
                 },
             )
 
+            if not sci.is_active:
+                sci.is_active = True
+
             last_updated_at = sci.updated_at
             sci.previous_item_total = sci.item_total
             sci.item_total = total_qty
 
-            if not created:
+            if not sci_created:
                 sci.previously_updated_at = last_updated_at
 
             sci.save()
             grand_total += total_qty
         
-        # Grand totals
-        # old_total = ScenicCalcTotal.objects.filter(opportunity=opportunity).first()
-        # old_grand_total = old_total.grand_total if old_total else None
-        # old_updated_at = old_total.updated_at if old_total else None
+        ScenicCalcItems.objects.filter(
+                opportunity=opportunity,
+                is_active=True
+            ).exclude(
+                current_item_id__in=item_totals.keys()
+            ).update(is_active=False)
 
+        # Grand totals
         scenic_total, created = update_model_with_history(
             model=ScenicCalcTotal,
             lookup={"opportunity": opportunity},
             defaults={"grand_total": grand_total},
             previous_fields=["grand_total"],
         )
-
-        # if not created:
-        #     scenic_total.previous_grand_total = old_grand_total
-        #     scenic_total.previously_updated_at = old_updated_at
-
-        # scenic_total.save()
 
         custom_input = CustomInput.objects.filter(opportunity=opportunity).first()
         if custom_input and date_out:
@@ -298,6 +327,26 @@ def fetch_workshop_workload(days):
             f"Working Days: {working_days if custom_input else 'N/A'}"
         )
         logger.info(f"Items added: {len(items)}")
+
+    inactive_opps = Opportunity.objects.exclude(
+        current_id__in=seen_opportunity_ids
+    ).filter(
+        is_active=True
+    )
+    count = inactive_opps.update(is_active=False)
+    logger.warning(f"Marked {count} opportunities as inactive (missing from API)")
+
+    ScenicCalcItem.objects.filter(
+        opportunity_id__in=inactive_opps.values_list("id", flat=True)
+    ).update(is_active=False)
+
+    ScenicCalcItems.objects.filter(
+        opportunity__in=inactive_opps
+    ).update(is_active=False)
+
+    ScenicCalcTotal.objects.filter(
+        opportunity__in=inactive_opps
+    ).update(is_active=False)
 
     print(f"Saving {len(opportunities)} opportunities")
     logger.info("Finished processing opportunities.")

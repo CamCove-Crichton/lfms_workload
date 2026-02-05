@@ -7,6 +7,7 @@ from django.http import JsonResponse, QueryDict
 from django_celery_results.models import TaskResult
 from django.utils import timezone
 from django.db.models.functions import Coalesce
+from django.db.models import Prefetch
 
 from datetime import timedelta
 from decimal import Decimal
@@ -117,9 +118,18 @@ def get_workshop_workload_data(request):
         Opportunity.objects.annotate(
             effective_start = Coalesce("load_starts_at", "deliver_starts_at", "starts_at")
         ).filter(
+            is_active=True,
             effective_start__range=[today, future_date]
         ).prefetch_related(
-            "scenic_calc_items", "tags", "client", "owner", "venue", "custom_input"
+            Prefetch(
+                "scenic_calc_items",
+                queryset=ScenicCalcItems.objects.filter(is_active=True)
+            ),
+            "tags",
+            "client",
+            "owner",
+            "venue",
+            "custom_input"
         ).order_by("effective_start")
     )
 
@@ -137,6 +147,7 @@ def get_workshop_workload_data(request):
                 "item_updated_at": sci.updated_at.isoformat() if sci.updated_at else None,
                 "item_previously_updated_at": sci.previously_updated_at.isoformat() if sci.previously_updated_at else None,
             })
+        scenic_total = getattr(opp, "scenic_calc_total", None)
 
         data.append({
             "opportunity_id": opp.current_id,
@@ -179,8 +190,8 @@ def get_workshop_workload_data(request):
                 "start_build_date": opp.custom_input.start_build_date,
             },
             "totals": {
-                "grand_total": float(opp.scenic_calc_total.grand_total or 0),
-                "previous_grand_total": float(opp.scenic_calc_total.previous_grand_total or 0),
+                "grand_total": float(scenic_total.grand_total) if scenic_total else 0,
+                "previous_grand_total": float(scenic_total.previous_grand_total) if scenic_total.previous_grand_total else 0,
             },
         })
     
