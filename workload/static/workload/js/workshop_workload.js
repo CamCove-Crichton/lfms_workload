@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
             previousOppIds = null;
         }
     } catch (error) {
-        console.log('Error parsing stored data:', error);
+        console.error('Error parsing stored data:', error);
         previousOppIds = null;
     }
     fetchData().then(data => {
@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
         previousOpportunityData = createPreviousOpportunityObjects(opportunityData);
         console.log(previousOpportunityData);
         oppIds = getOppIds(opportunityData);
-        // compareOpportunityData(opportunityData, previousOpportunityData);
         displayOpportunities(opportunityData, previousOpportunityData, previousOppIds);
         clickDisplayNone();
         previousOppIds = oppIds;
@@ -46,7 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
             opportunityData = sortOpportunitiesByStartDate(opportunityData);
             previousOpportunityData = createPreviousOpportunityObjects(opportunityData);
             oppIds = getOppIds(opportunityData);
-            // compareOpportunityData(opportunityData, previousOpportunityData);
             displayOpportunities(opportunityData, previousOpportunityData, previousOppIds);
             clickDisplayNone();
             previousOppIds = oppIds;
@@ -160,16 +158,19 @@ async function displayOpportunities(currentData, previousData = null, previousOp
 
             if (cell && status !== 20 && totalHours > 0) {
                 if (previousOppIds) {
-                    // console.log('Previous Data exists!');
                     const previousOpportunity = previousData.find(
                         (p) => p.opportunity_id === currentOpportunityId
                     );
 
-                    matchFound = Boolean(previousOpportunity);
                     const unrelatedPrevious = previousData[0];
+                    for (let i = 0; i < previousOppIds.length; i++) {
+                        if (previousOppIds[i] == currentOpportunityId) {
+                            matchFound = true;
+                            break;
+                        }
+                    }
 
                     if (matchFound) {
-                        // console.log(`MATCH: Current ID ${currentOpportunityId} existed previously`);
                         const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = await createOpportunityElement(
                             currentOpportunity, 
                             previousOpportunity, 
@@ -186,7 +187,6 @@ async function displayOpportunities(currentData, previousData = null, previousOp
                         }
                         adjustTableRowHeights();
                     } else {
-                        // console.log(`NO MATCH: Current ID ${currentOpportunityId} is new`);
                         const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = await createOpportunityElement(currentOpportunity, unrelatedPrevious, matchFound);
                         cell.appendChild(opportunityDiv);
                         if (plannedFinish) {
@@ -199,10 +199,8 @@ async function displayOpportunities(currentData, previousData = null, previousOp
                         adjustTableRowHeights();
                     }
                 } else {
-                    // console.log('No previous data exists!');
                     // If no previousData exists, create a new opportunity
                     const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = await createOpportunityElement(currentOpportunity);
-                    // console.log(opportunityDiv);
                     cell.appendChild(opportunityDiv);
                     if (plannedFinish) {
                         setDivStyle(opportunityDiv, status, workingDays, startBuildDate, plannedFinish);
@@ -303,13 +301,6 @@ async function createOpportunityElement(currentOpportunity, previousOpportunity 
 
         const totalHoursDifference = currentTotalHours - previousTotalHours;
 
-        if (currentOpportunityId === 19879) {
-            console.log(matchFound);
-            console.log(`Current Opportunity Name: ${currentOpportunityName}`);
-            console.log(`Current Status Name: ${currentStatusName}`);
-            console.log(`Previous Opportunity Name: ${previousOpportunityName}`);
-            console.log(`Previous Status Name: ${previousStatusName}`);
-        }
         opportunityDiv.innerHTML = matchFound
             ? setInnerHTML(workingDays, currentOpportunityName, matchFound, previousOpportunityName, currentStatusName, previousStatusName)
             : setInnerHTML(workingDays, currentOpportunityName, matchFound);
@@ -319,14 +310,14 @@ async function createOpportunityElement(currentOpportunity, previousOpportunity 
             : createModalBadge(matchFound, currentTotalHours);
 
         if (matchFound) {
-            updateModalContent(button, currentOpportunity, originalStartBuildDate, previousOpportunity);
+            await updateModalContent(button, currentOpportunity, originalStartBuildDate, previousOpportunity, exists);
         } else {
-            updateModalContent(button, currentOpportunity, originalStartBuildDate);
+            await updateModalContent(button, currentOpportunity, originalStartBuildDate, exists);
         }
     } else {
         opportunityDiv.innerHTML = setInnerHTML(workingDays, currentOpportunityName);
         badge = createModalBadge();
-        updateModalContent(button, currentOpportunity, originalStartBuildDate);
+        await updateModalContent(button, currentOpportunity, originalStartBuildDate, exists);
     }
 
     // Assemble elements
@@ -821,7 +812,22 @@ function setOpportunityDateAndTime(opportunityEvent) {
 }
 
 /**
- * Function to set the opportunity type
+ * Determines and returns the opportunity type based on hire-related flags.
+ *
+ * The function:
+ * - Validates that the provided opportunity event is an object.
+ * - Derives the opportunity type from the `dry_hire` and
+ *   `dry_hire_transport` properties.
+ * - Returns one of: "Dry Hire", "Dry Hire Transport", or "Wet Hire".
+ * - Handles and reports errors by logging to the console and displaying
+ *   a user-facing message in the API error container.
+ *
+ * @param {object} opportunityEvent - The opportunity event object containing
+ *                                    hire-related properties used to determine
+ *                                    the opportunity type.
+ *
+ * @returns {string} - The resolved opportunity type, or an empty string if an
+ *                     error occurs or the input is invalid.
  */
 function setOpportunityType(opportunityEvent) {
     // Check that the opportunity event is an object
@@ -944,9 +950,8 @@ function createDailyCarpentersDiv(id) {
  * @param {string} startBuildDate - The date that the build must start
  * @param {object} opportunityElementTwo - The second opportunity element object
  */
-function updateModalContent(button, opportunityElementOne, startBuildDate, opportunityElementTwo=null) {
-    // const id = opportunityElementOne.opportunity_id;
-    button.addEventListener('click', function() {
+async function updateModalContent(button, opportunityElementOne, startBuildDate, opportunityElementTwo=null, exists=false) {
+    button.addEventListener('click', async function() {
         // Get the opportunity name
         const opportunityName = this.parentElement.querySelector('.badge').textContent;
 
@@ -958,14 +963,24 @@ function updateModalContent(button, opportunityElementOne, startBuildDate, oppor
         modalTitle.classList.add('bold-text');
 
         // Create the scenicCalcDiv and append it to the modal body
-        compareScenicCalcModals(opportunityElementOne, startBuildDate, opportunityElementTwo);
+        await compareScenicCalcModals(opportunityElementOne, startBuildDate, opportunityElementTwo, exists);
         openOpportunity(opportunityElementOne);
     });
 }
 
 /**
- * Function to create buttons to open the opportunity in a new tab or close the modal
- * @param {number} id - The opportunity ID
+ * Builds and renders the Scenic Calc modal footer actions for an opportunity.
+ *
+ * The function:
+ * - Creates a link to open the opportunity in Current RMS in a new browser tab.
+ * - Creates Save, Edit, and Close buttons for interacting with the modal.
+ * - Wires up the Edit button to enable in-modal editing for the opportunity.
+ * - Injects an error message container for validation or save feedback.
+ * - Clears and repopulates the modal footer with the newly created elements.
+ *
+ * @param {object} opportunity - The opportunity object containing at least
+ *                               the `opportunity_id` used to build links and
+ *                               bind edit behaviour.
  */
 function openOpportunity(opportunity) {
     const id = opportunity.opportunity_id;
@@ -1012,6 +1027,21 @@ function openOpportunity(opportunity) {
     modalFooter.appendChild(closeButton);
 }
 
+/**
+ * Enables in-place editing of selected Scenic Calc fields within the modal.
+ *
+ * The function:
+ * - Replaces static display values with editable form controls for
+ *   number of carpenters, weekend inclusion, and planned finish date.
+ * - Pre-populates inputs with the currently displayed values.
+ * - Toggles modal action buttons, hiding Edit and revealing Save.
+ * - Binds the Save action to persist changes for the given opportunity.
+ * - Resets validation errors when the planned finish date is modified.
+ *
+ * @param {object} opportunity - The opportunity object containing the
+ *                               `opportunity_id` used to locate and
+ *                               update modal fields.
+ */
 function enableEditing(opportunity) {
     const id = opportunity.opportunity_id;
     const modalBody = document.querySelector('#scenicCalcModal .modal-body');
@@ -1057,10 +1087,30 @@ function enableEditing(opportunity) {
         plannedFinishInput.classList.remove('is-invalid');
         errorBox.classList.add('d-none');
         errorBox.textContent = '';
-        console.log(`Planned Finish date: ${plannedFinishInput.value}`);
     });
 }
 
+/**
+ * Persists edited Scenic Calc values for an opportunity and updates related dates.
+ *
+ * The function:
+ * - Reads edited values from the modal (number of carpenters, weekend inclusion,
+ *   and planned finish date).
+ * - Recalculates working days and derives a new start build date.
+ * - Validates that the planned finish date (if provided) occurs before the start date.
+ * - Submits updated custom input data to the backend via an async POST request.
+ * - Provides user feedback during save (disabled button, error messages, success/failure modals).
+ * - Restores modal button state and reloads the page after a successful update.
+ *
+ * @param {object} opportunity - The opportunity object containing IDs, totals,
+ *                               and existing custom input data required for
+ *                               calculations and validation.
+ * @param {HTMLButtonElement} button - The Save button element used to display
+ *                                     loading state and prevent duplicate submits.
+ *
+ * @returns {Promise<void>} - Resolves once the save operation completes and
+ *                           UI state has been fully restored.
+ */
 async function saveEdits(opportunity, button) {
     const {
         opportunity_id: id,
@@ -1076,7 +1126,6 @@ async function saveEdits(opportunity, button) {
     const includeWeekends = document.querySelector(`#edit-include-weekends-${id}`).checked;
     const plannedFinishElm = document.querySelector(`#edit-planned-finish-date-${id}`);
     let plannedFinish = plannedFinishElm.value;
-    console.log(`Planned Finish Date in saveEdits: ${plannedFinish}`);
     const workingDays = await calculateWorkingDays(totalHours, numCarpenters);
 
     const scenicModalEl = document.getElementById('scenicCalcModal');
@@ -1157,29 +1206,55 @@ async function saveEdits(opportunity, button) {
     }
 }
 
+/**
+ * Normalises a date string for safe use in HTML date inputs.
+ *
+ * The function:
+ * - Safely handles empty or falsy values by returning an empty string.
+ * - Rejects common non-date placeholder values (e.g. "N/A", "None", "-", "null").
+ * - Validates and preserves correctly formatted ISO dates ("YYYY-MM-DD").
+ * - Returns an empty string for any value that does not match the expected format.
+ *
+ * @param {string} str - The date string to normalise.
+ *
+ * @returns {string} - A valid "YYYY-MM-DD" date string, or an empty string
+ *                     if the input is invalid or unsupported.
+ */
 function normaliseDateString(str) {
     if (!str) {
-        console.log("Not a string!");
+        console.error("Not a string!");
         return "";
     }
     // Reject non-date placeholders
     if (str === "N/A" || str === "None" || str === "-" || str === "null") {
-        console.log("Not a valid value");
-        console.log(`String value: ${str}`);
+        console.error(`Not a valid value! String value: ${str}`);
         return "";
     }
     // If already valid yyyy-mm-dd, keep it
     if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-        console.log("Vaild!");
         return str
     };
     
-    console.log("Did not match any validations, returning empty");
+    console.error("Did not match any validations, returning empty");
     return "";
 }
 
 /**
- * Function to add additional content to the modal
+ * Creates a formatted paragraph element for displaying labelled content in the modal.
+ *
+ * The function:
+ * - Builds a `<p>` element containing a bold label and a value span.
+ * - Optionally appends a secondary value (e.g. date and time) when provided.
+ * - Assigns a unique ID to the value span for later lookup or replacement.
+ *
+ * @param {string} string - The label text to display (e.g. "Client", "Date Out").
+ * @param {string} idString - The ID applied to the value `<span>` element.
+ * @param {string} content - The primary content value to display.
+ * @param {string|null} [contentTwo=null] - An optional secondary value to append
+ *                                          after the primary content.
+ *
+ * @returns {HTMLParagraphElement} - A paragraph element ready to be appended
+ *                                   to another element.
  */
 function additionalContent(string, idString, content, contentTwo=null) {
     const contentP = document.createElement('p');
@@ -1191,24 +1266,6 @@ function additionalContent(string, idString, content, contentTwo=null) {
 
     return contentP;
 }
-
-/**
- * Function to compare the previous and current scenic calc array and total working hours and days
- * @param {object} currentData - The current opportunity data
- * @param {object} previousData - The previous opportunity data
- */
-// function compareOpportunityData(currentData, previousData=null) {
-//     let currentOpportunityElements = currentData;
-//     console.log('Current opportunity elements');
-//     console.log(currentOpportunityElements);
-
-//     // Check if there is previous data
-//     if (previousData !== null) {
-//         let previousOpportunityElements = previousData;
-//         console.log('Previous opportunity elements');
-//         console.log(previousOpportunityElements);
-//     }
-// }
 
 /**
  * Function to iterate through the opportunity data and get the required element objects
@@ -1294,13 +1351,53 @@ function additionalContent(string, idString, content, contentTwo=null) {
 // }
 
 /**
- * Function to compare the scenic calc arrays and total hours and working days
- * @param {object} currentOpportunityElement - The most current opportunity element object
- * @param {string} startBuildDate - The date that the build must start
- * @param {object} previousOpportunityElement - The previous opportunity element object
+ * Compares current and previous scenic calculation data for an opportunity and
+ * renders a comparison view inside the Scenic Calc modal.
+ *
+ * The function:
+ * - Optionally fetches the latest Custom Input data when the opportunity already exists.
+ * - Compares scenic calc item quantities between current and previous data,
+ *   highlighting increases, decreases, and newly added items.
+ * - Compares totals, working days, and number of carpenters, displaying visual
+ *   indicators for any changes.
+ * - Detects changes to key opportunity metadata (client, dates, status,
+ *   weekend inclusion, planned finish date) and updates modal styling accordingly.
+ * - Falls back to rendering a standard scenic calc view when no previous data exists.
+ *
+ * @param {object} currentOpportunityElement - The current opportunity data,
+ *                                            including scenic calc items, totals,
+ *                                            and custom input values.
+ * @param {string} startBuildDate - The calculated start build date to display
+ *                                 in the modal.
+ * @param {object|null} previousOpportunityElement - The previous opportunity data
+ *                                                   used for comparison, or null
+ *                                                   if no prior data exists.
+ * @param {boolean} [exists=false] - Whether the opportunity already exists in the system;
+ *                                   when true, the latest Custom Input data is fetched
+ *                                   before performing comparisons.
+ *
+ * @returns {Promise<void>} - Resolves once the Scenic Calc modal has been fully
+ *                           populated and updated.
  */
-function compareScenicCalcModals(currentOpportunityElement, startBuildDate, previousOpportunityElement) {
+async function compareScenicCalcModals(currentOpportunityElement, startBuildDate, previousOpportunityElement, exists=false) {
     const id = currentOpportunityElement.opportunity_id;
+    console.log(previousOpportunityElement);
+
+    // Fetch latest Custom Input data if opportunity already exists
+    let customInputData = null;
+    if (exists) {
+        try{
+            const response = await fetch(`/workload/opportunities/${id}/custom_input/`);
+            if (response.ok) {
+                customInputData = await response.json();
+            } else {
+                console.error(`Failed to fetch custom input data for opportunity ${id}`);
+            }
+        } catch (err) {
+            console.error(`Error fetching custom input data for opportunity ${id}:`, err);
+        }
+    }
+
     // Assign the scenic calc arrays
     const currentScenicCalcArray = currentOpportunityElement.items;
     
@@ -1315,22 +1412,22 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
         // Iterate through the scenic calc arrays and compare the quantities
         for (let i = 0; i < currentScenicCalcArray.length; i++) {
             const currentScenicCalcName = currentScenicCalcArray[i].name;
-            const currentScenicCalcQuantity = currentScenicCalcArray[i].item_total;
+            const currentScenicCalcQuantity = Number(currentScenicCalcArray[i].item_total);
             let matchFound = false;
             let scenicCalcP = document.createElement('p');
             scenicCalcP.classList.add('position-relative');
             for (let j =0; j < previousScenicCalcArray.length; j++) {
                 const previousScenicCalcName = previousScenicCalcArray[j].name;
-                const previousScenicCalcQuantity = previousScenicCalcArray[j].item_total;
+                const previousScenicCalcQuantity = Number(previousScenicCalcArray[j].item_total);
                 const quantityDifference = currentScenicCalcQuantity - previousScenicCalcQuantity;
                 if (currentScenicCalcName === previousScenicCalcName) {
                     matchFound = true;
-                    if (currentScenicCalcQuantity > previousScenicCalcQuantity) {
+                    if (previousScenicCalcQuantity && currentScenicCalcQuantity > previousScenicCalcQuantity) {
                         scenicCalcP.innerHTML = `<span class="bold-text">${currentScenicCalcName}:</span> ${currentScenicCalcQuantity} hours
                             <span class="position-absolute top-0 end-0 badge rounded-pill bg-danger click-display-none">
                                 <span>+${quantityDifference}</span>
                             </span>`;
-                    } else if (currentScenicCalcQuantity < previousScenicCalcQuantity) {
+                    } else if (previousScenicCalcQuantity && currentScenicCalcQuantity < previousScenicCalcQuantity) {
                         scenicCalcP.innerHTML = `<span class="bold-text">${currentScenicCalcName}:</span> ${currentScenicCalcQuantity} hours
                             <span class="position-absolute top-0 end-0 badge rounded-pill bg-success click-display-none">
                                 <span>${quantityDifference}</span>
@@ -1353,21 +1450,23 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
         }
 
         // Get the total hours and working days from the opportunity elements
-        const previousTotalHours = previousOpportunityElement.totals["grand_total"];
-        const currentTotalHours = currentOpportunityElement.totals["grand_total"];
-        const previousWorkingDays = previousOpportunityElement.custom_input["working_days"];
-        const currentWorkingDays = currentOpportunityElement.custom_input["working_days"];
+        const previousTotalHours = Number(previousOpportunityElement.totals["grand_total"]);
+        const currentTotalHours = Number(currentOpportunityElement.totals["grand_total"]);
+        const previousWorkingDays = Number(previousOpportunityElement.custom_input["working_days"]);
+        const currentWorkingDays = Number(
+            exists ? customInputData.working_days : currentOpportunityElement.custom_input["working_days"]
+        );
         const workingDaysDifference = currentWorkingDays - previousWorkingDays;
 
         // Add the total hours and working days to the Scenic Calc div
         let totalHoursP = document.createElement('p');
         totalHoursP.classList.add('position-relative');
-        if (currentTotalHours > previousTotalHours) {
+        if (previousTotalHours && currentTotalHours > previousTotalHours) {
             totalHoursP.innerHTML = `<span class="bold-text">Total:</span> ${currentTotalHours} hours / ${currentWorkingDays} days
                 <span class="position-absolute top-0 end-0 badge rounded-pill bg-danger click-display-none">
                     <span>+${workingDaysDifference} days</span>
                 </span>`;
-        } else if (currentTotalHours < previousTotalHours) {
+        } else if (previousTotalHours && currentTotalHours < previousTotalHours) {
             totalHoursP.innerHTML = `<span class="bold-text">Total:</span> ${currentTotalHours} hours / ${currentWorkingDays} days
                 <span class="position-absolute top-0 end-0 badge rounded-pill bg-success click-display-none">
                     <span>${workingDaysDifference} days</span>
@@ -1376,19 +1475,22 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
             totalHoursP.innerHTML = `<span class="bold-text">Total:</span> ${currentTotalHours} hours / ${currentWorkingDays} days`;
         }
 
-        const previousNumOfCarpenters = previousOpportunityElement.custom_input["previous_num_of_carpenters"];
-        const currentNumOfCarpenters = currentOpportunityElement.custom_input["num_of_carpenters"]
+        const previousNumOfCarpenters = Number(previousOpportunityElement.custom_input["num_of_carpenters"]);
+        const currentNumOfCarpenters = Number(
+            exists ? customInputData.num_of_carpenters : currentOpportunityElement.custom_input["num_of_carpenters"]
+        );
         const numOfCarpentersDiff = currentNumOfCarpenters - previousNumOfCarpenters;
         let numOfCarpentersP = document.createElement('p');
-        if (currentNumOfCarpenters > previousNumOfCarpenters) {
+        numOfCarpentersP.classList.add('position-relative');
+        if (previousNumOfCarpenters && currentNumOfCarpenters > previousNumOfCarpenters) {
             numOfCarpentersP.innerHTML = `<span class="bold-text">Number of Carpenters:</span><span id="num-of-carpenters-${id}"> ${currentNumOfCarpenters}</span>
                 <span class="position-absolute top-0 end-0 badge rounded-pill bg-danger click-display-none">
-                    <span>+${numOfCarpentersDiff} days</span>
+                    <span>+${numOfCarpentersDiff}</span>
                 </span>`;
-        } else if (currentNumOfCarpenters < previousNumOfCarpenters) {
+        } else if (previousNumOfCarpenters && currentNumOfCarpenters < previousNumOfCarpenters) {
             numOfCarpentersP.innerHTML = `<span class="bold-text">Number of Carpenters:</span><span id="num-of-carpenters-${id}"> ${currentNumOfCarpenters}</span>
                 <span class="position-absolute top-0 end-0 badge rounded-pill bg-success click-display-none">
-                    <span>${numOfCarpentersDiff} days</span>
+                    <span>${numOfCarpentersDiff}</span>
                 </span>`;
         } else {
             numOfCarpentersP.innerHTML = `<span class="bold-text">Number of Carpenters:</span><span id="num-of-carpenters-${id}"> ${currentNumOfCarpenters}</span>`;
@@ -1399,7 +1501,8 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
         const currentStartDate = currentOpportunityElement.custom_input["date_out"];
         const currentStartTime = currentOpportunityElement.custom_input["time_out"];
         const currentStatusName = currentOpportunityElement.status_name;
-        const currentIncludeWeekends = currentOpportunityElement.custom_input["include_weekends"] === true ? "Yes" : "No";
+        const weekends = exists ? customInputData.include_weekends : currentOpportunityElement.custom_input["include_weekends"];
+        const currentIncludeWeekends = weekends === true ? "Yes" : "No";
         const currentPlannedFinishDate = currentOpportunityElement.custom_input["planned_finish_date"] || "N/A";
     
         // Set the remaining previous opportunity elements
@@ -1418,7 +1521,7 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
 
         // If the client name has changed, update the element styling
         let clientP;
-        if (currentClientName !== previousClientName) {
+        if (previousClientName && currentClientName !== previousClientName) {
             clientP = updatedModalElements('Client', `client-name-${id}`, currentClientName);
         } else {
             clientP = additionalContent('Client', `client-name-${id}`, currentClientName);
@@ -1426,7 +1529,7 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
 
         // If the start date or start time has changed, update the element styling
         let dateOutP;
-        if (currentStartDate !== previousStartDate || currentStartTime !== previousStartTime) {
+        if ((previousStartDate && currentStartDate !== previousStartDate) || (previousStartTime && currentStartTime !== previousStartTime)) {
             dateOutP = updatedModalElements('Date Out', `date-out-${id}`, currentStartDate, currentStartTime);
         } else {
             dateOutP = additionalContent('Date Out', `date-out-${id}`, currentStartDate, currentStartTime);
@@ -1436,7 +1539,7 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
 
         // If the status has changed, update the element styling
         let statusP;
-        if (currentStatusName !== previousStatusName) {
+        if (previousStatusName && currentStatusName !== previousStatusName) {
             statusP = updatedModalElements('Status', `status-${id}`, currentStatusName);
         } else {
             statusP = additionalContent('Status', `status-${id}`, currentStatusName);
@@ -1444,7 +1547,7 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
 
         // If the include weekends has changed, update the element styling
         let includeWeekendsP;
-        if (currentIncludeWeekends !== previousIncludeWeekends) {
+        if (previousIncludeWeekends && currentIncludeWeekends !== previousIncludeWeekends) {
             includeWeekendsP = updatedModalElements('Include Weekends', `include-weekends-${id}`, currentIncludeWeekends);
         } else {
             includeWeekendsP = additionalContent('Include Weekends', `include-weekends-${id}`, currentIncludeWeekends);
@@ -1452,7 +1555,7 @@ function compareScenicCalcModals(currentOpportunityElement, startBuildDate, prev
 
         // If the planned finish date has changed, update the element styling
         let plannedFinishDateP;
-        if (currentPlannedFinishDate !== previousPlannedFinishDate) {
+        if (previousPlannedFinishDate && currentPlannedFinishDate !== previousPlannedFinishDate) {
             plannedFinishDateP = updatedModalElements('Planned Finish Date', `planned-finish-date-${id}`, currentPlannedFinishDate);
         } else {
             plannedFinishDateP = additionalContent('Planned Finish Date', `planned-finish-date-${id}`, currentPlannedFinishDate);
@@ -1690,10 +1793,10 @@ function createModalBadge(matchFound=null, currentTotalHours=null, previousTotal
     let badge = document.createElement('span');
     badge.classList.add('badge', 'click-display-none');
     if (matchFound === true && currentTotalHours !== null && previousTotalHours !== null) {
-        if (currentTotalHours > previousTotalHours) {
+        if (previousTotalHours > 0 && currentTotalHours > previousTotalHours) {
             badge.classList.add('bg-danger');
             badge.textContent = `+${totalHoursDifference}`;
-        } else if(currentTotalHours < previousTotalHours) {
+        } else if(previousTotalHours > 0 && currentTotalHours < previousTotalHours) {
             badge.classList.add('bg-success');
             badge.textContent = `${totalHoursDifference}`;
         } else {
@@ -1724,7 +1827,7 @@ function createModalBadge(matchFound=null, currentTotalHours=null, previousTotal
 function setInnerHTML(workingDays=0, currentOpportunityName=null, matchFound=null, previousOpportunityName=null, currentStatusName=null, previousStatusName=null) {
     let innerHTML;
     if (matchFound === true) {
-        if (currentOpportunityName !== previousOpportunityName || currentStatusName !== previousStatusName) {
+        if ((previousOpportunityName && currentOpportunityName !== previousOpportunityName) || (previousStatusName && currentStatusName !== previousStatusName)) {
             innerHTML = `<span class="badge rounded-pill truncate ${workingDays > 0 ? 'text-align-end' : ''}">${currentOpportunityName}</span>
             <span class="position-absolute top-0 end-0 p-2 bg-info border border-light rounded-circle click-display-none">
                 <span class="visually-hidden">New alerts</span>
@@ -1800,14 +1903,12 @@ async function createWeekendCheckbox(opportunity, customInputData=null) {
 }
 
 async function updateWeekendsInput(opportunity, newState) {
-    // const opportunityId = opportunity.opportunity_id;
     const {
         opportunity_id: opportunityId,
         custom_input: { date_out: startDate } = {},
         custom_input: { planned_finish_date : plannedFinish } = {},
         custom_input: { working_days: workingDays } = {},
     } = opportunity;
-    console.log(plannedFinish);
 
     const startBuildDate = plannedFinish ? createStartBuildDate(workingDays, plannedFinish, newState, true) : createStartBuildDate(workingDays, startDate, newState);
 
@@ -2059,21 +2160,46 @@ function getEarliestVisibleDate(dateString) {
 }
 
 /**
- * Checks if a given date (represented by a '<td>' element ID) is visible in the DOM.
- * If the date is not visible, finds the earliest visible date in the same row.
+ * Determines the most appropriate visible date cell to use based on two date IDs.
  *
- * @param {string} dateString - The ID of the target '<td>' element, representing a date (formatted as "YYYY-MM-DD").
- * @param {string} dateStringTwo - The fallback ID of the target '<td>', representing a date (formatted as "YYYY-MM-DD").
+ * - If the primary date cell exists and is visible, it is returned.
+ * - If the two dates span different months, the function first attempts to find
+ *   the earliest visible date from the end of the primary date’s month.
+ * - If no visible date is found there, or if both dates are in the same month,
+ *   it falls back to finding the earliest visible date from the secondary date.
  *
- * @returns {string|null} - The ID of the visible '<td>' element, either the original or the earliest visible one, or 'null' if none are visible.
+ * @param {string} dateString - The primary '<td>' element ID representing a date
+ *                             (formatted as "YYYY-MM-DD").
+ * @param {string} dateStringTwo - The secondary '<td>' element ID used as a fallback
+ *                                 (formatted as "YYYY-MM-DD").
+ *
+ * @returns {string|null} - The ID of the most relevant visible '<td>' element,
+ *                          or null if no visible date can be found.
  */
 function isDateVisible(dateString, dateStringTwo) {
+    const dateOne = new Date(dateString);
+    const dateTwo = new Date(dateStringTwo);
+    const monthOne = dateOne.getMonth();
+    const monthTwo = dateTwo.getMonth();
+    let evDate;
+    
     const startCell = document.getElementById(dateString);
-
+    
     // Check if startCell exists and is visible
     if (startCell && !startCell.classList.contains("display-none")) {
         return dateString;
     } 
+    
+    // Check if both dates are in the same month, if not get last day of month for dateString and return earliest visible date
+    if (monthOne != monthTwo) {
+        const monthOneEnd = getLastDayOfMonth(dateString);
+        evDate = getEarliestVisibleDate(monthOneEnd);
+        if (evDate) {
+            return evDate;
+        } else {
+            return getEarliestVisibleDate(dateStringTwo);
+        }
+    }
 
     // Otherwise, find the earliest visible date
     return getEarliestVisibleDate(dateStringTwo);
