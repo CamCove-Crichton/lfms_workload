@@ -1,7 +1,7 @@
 // Document ready function
 $(document).ready(function() {
     console.log('Document ready');
-    contentNavShift();
+    // contentNavShift();
     // setContentHeight();
 });
 
@@ -11,18 +11,18 @@ $(document).ready(function() {
  * @param {number} navHeight - The height of the navbar.
  * @returns {void}
  */
-function contentNavShift() {
-    $('.navbar-toggler').click(function() {
-        let navHeight = $('.navbar').height();
-        if ($('#main-content').css('margin-top') === '0px') {
-            // Navbar is open
-            $('#main-content').css('margin-top', navHeight + 'px');
-        } else {
-            // Navbar is closed
-          $('#main-content').css('margin-top', '0px');
-        }
-      });
-}
+// function contentNavShift() {
+//     $('.navbar-toggler').click(function() {
+//         let navHeight = $('.navbar').height();
+//         if ($('#main-content').css('margin-top') === '0px') {
+//             // Navbar is open
+//             $('#main-content').css('margin-top', navHeight + 'px');
+//         } else {
+//             // Navbar is closed
+//           $('#main-content').css('margin-top', '0px');
+//         }
+//       });
+// }
 
 /**
  * Calculates and sets the height of the main content.
