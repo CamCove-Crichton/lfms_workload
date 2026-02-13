@@ -155,6 +155,7 @@ async function displayOpportunities(currentData, previousData = null, previousOp
             } = currentOpportunity;
 
             const cell = plannedFinish ? document.getElementById(plannedFinish) : document.getElementById(startDate);
+            const cellContent = cell.querySelector('.cell-content');
 
             if (cell && status !== 20 && totalHours > 0) {
                 if (previousOppIds) {
@@ -177,7 +178,7 @@ async function displayOpportunities(currentData, previousData = null, previousOp
                             matchFound
                         );
 
-                        cell.appendChild(opportunityDiv);
+                        cellContent.appendChild(opportunityDiv);
                         if (plannedFinish) {
                             setDivStyle(opportunityDiv, status, workingDays, startBuildDate, plannedFinish);
                             attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, plannedFinish, previousOpportunity, matchFound, true);
@@ -188,7 +189,7 @@ async function displayOpportunities(currentData, previousData = null, previousOp
                         adjustTableRowHeights();
                     } else {
                         const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = await createOpportunityElement(currentOpportunity, unrelatedPrevious, matchFound);
-                        cell.appendChild(opportunityDiv);
+                        cellContent.appendChild(opportunityDiv);
                         if (plannedFinish) {
                             setDivStyle(opportunityDiv, status, workingDays, startBuildDate, plannedFinish);
                             attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, plannedFinish, null, matchFound, true);
@@ -201,7 +202,7 @@ async function displayOpportunities(currentData, previousData = null, previousOp
                 } else {
                     // If no previousData exists, create a new opportunity
                     const { opportunityDiv, startBuildDate, includeWeekends, carpentersInput } = await createOpportunityElement(currentOpportunity);
-                    cell.appendChild(opportunityDiv);
+                    cellContent.appendChild(opportunityDiv);
                     if (plannedFinish) {
                         setDivStyle(opportunityDiv, status, workingDays, startBuildDate, plannedFinish);
 	                    attachEventListeners(includeWeekends, carpentersInput, currentOpportunity, cell, startBuildDate, plannedFinish, null, matchFound, true);
@@ -447,6 +448,8 @@ async function handleInputChange(carpentersInput, currentOpportunity, cell, prev
          status,
     } = currentOpportunity;
 
+    cellContent = cell.querySelector('.cell-content');
+
     // Remove any existing opportunity divs before appending a new one
     removeOldDivs(currentOpportunityId);
 
@@ -459,7 +462,7 @@ async function handleInputChange(carpentersInput, currentOpportunity, cell, prev
     );
 
     // Append, style & attach event listeners
-    cell.appendChild(opportunityDiv);
+    cellContent.appendChild(opportunityDiv);
     if (plannedFinish) {
         setDivStyle(opportunityDiv, status, workingDays, startBuildDate, plannedFinish);
         attachEventListeners(includeWeekends, newCarpentersInput, currentOpportunity, cell, startBuildDate, plannedFinish, previousOpportunity, matchFound, true);
@@ -912,17 +915,19 @@ function rollingCalendar(days) {
             let day = date.getDate() - 1;
             if (cells[day]) {
                 cells[day].id = date.toISOString().split('T')[0];
+                const cellInfo = cells[day].querySelector('.cell-info');
 
                 // Set the inner HTML of the cell
                 let dayNum = date.getDate();
                 let monthShort = date.toLocaleString('default', {month: 'short'});
                 let weekday = date.toLocaleString('default', {weekday: 'short'});
-                cells[day].innerHTML = `<p class="mb-1 date">${weekday} ${dayNum} ${monthShort}</p>`;
+                cellInfo.innerHTML = `<div class="mb-1 date">${weekday} ${dayNum} ${monthShort}</div>`;
                 cells[day].classList.add('position-relative');
                 cells[day].classList.remove('display-none');
 
                 const carpDiv = createDailyCarpentersDiv(cells[day].id);
-                cells[day].appendChild(carpDiv);
+                cellInfo.appendChild(carpDiv);
+                cells[day].appendChild(cellInfo);
             }
         }
     }

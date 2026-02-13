@@ -52,102 +52,106 @@
     border: 1px solid #fff;
 }
 
+.b-border {
+    border-bottom: 1px solid #20C4F4;
+}
+
 .opportunity {
     position: absolute;
 }
 
 .row-one {
-    top: 66px;
+    top: 82px;
 }
 
 .row-two {
-    top: 202px;
+    top: 218px;
 }
 
 .row-three {
-    top: 338px;
+    top: 354px;
 }
 
 .row-four {
-    top: 474px;
+    top: 490px;
 }
 
 .row-five {
-    top: 610px;
+    top: 626px;
 }
 
 .row-six {
-    top: 746px;
+    top: 762px;
 }
 
 .row-seven {
-    top: 882px;
+    top: 898px;
 }
 
 .row-eight {
-    top: 1018px;
+    top: 1034px;
 }
 
 .row-nine {
-    top: 1154px;
+    top: 1170px;
 }
 
 .row-ten {
-    top: 1290px;
+    top: 1306px;
 }
 
 .row-eleven {
-    top: 1426px;
+    top: 1442px;
 }
 
 .row-twelve {
-    top: 1562px;
+    top: 1578px;
 }
 
 .row-thirteen {
-    top: 1698px;
+    top: 1714px;
 }
 
 .row-fourteen {
-    top: 1834px;
+    top: 1850px;
 }
 
 .row-fifteen {
-    top: 1970px;
+    top: 1986px;
 }
 
 .row-sixteen {
-    top: 2106px;
+    top: 2122px;
 }
 
 .row-seventeen {
-    top: 2242px;
+    top: 2258px;
 }
 
 .row-eighteen {
-    top: 2378px;
+    top: 2394px;
 }
 
 .row-nineteen {
-    top: 2514px;
+    top: 2530px;
 }
 
 .row-twenty {
-    top: 2650px;
+    top: 2666px;
 }
 
 .row-twenty-one {
-    top: 2786px;
+    top: 2802px;
 }
 
 .row-twenty-two {
-    top: 2922px;
+    top: 2938px;
 }
 
 .row-twenty-three {
-    top: 3058px;
+    top: 3074px;
 }
 
 .row-twenty-four {
-    top: 3194px;
+    top: 3210px;
 }
